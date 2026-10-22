@@ -9,9 +9,9 @@ This repo holds the **combat engine** and the **run layer** on top of it: server
 1. Install [Rokit](https://github.com/rojo-rbx/rokit), then run `rokit install` in this folder to get Rojo.
 2. Install the Rojo plugin in Roblox Studio (`rojo plugin install`).
 3. Run `rojo serve`, open a place in Studio and click **Connect** in the Rojo plugin.
-4. Press Play. Click **New Run** (top right) to play act 1 from the map, or use the Fight buttons for a single debug fight (Prototype is the Warden vs a Cultist).
+4. Press Play. Click **New Run** to play act 1 from the map, or **Practice fight** for a single fight (the Warden vs a Cultist).
 
-Debug controls: click an enemy to target it, click a card to play it, then End Turn. During a QTE, click or tap the box or press Space. Sequence QTEs also take the arrow keys or WASD, and for Trace you hold and drag through the dots in order.
+Controls: tap a card to lift it, then tap it again to play it, or tap an enemy to play it on that enemy. End Turn is bottom right. Hover (or long-press on touch) a card, status, intent or relic for a tooltip. During a QTE, tap or click anywhere or press Space. Sequence QTEs also take the arrow keys or WASD, and for Trace you hold and drag through the dots in order. QTE assists (wider windows, always Good) are under Settings.
 
 ## Layout
 
@@ -22,8 +22,8 @@ Debug controls: click an enemy to target it, click a card to play it, then End T
 | `src/server/Combat` | `ServerScriptService.Server.Combat` | Pure Luau engine: `Combat`, `EffectResolver`, `StatusSystem`, `EnemyAI`, `QteJudge`, `ContentValidator`, `Rng` |
 | `src/server/Run` | `ServerScriptService.Server.Run` | Pure Luau run engine: `Run`, `MapGenerator`, `EventRunner`, `RunEffects`, `Rewards`, `RunValidator` |
 | `src/server/CombatService.server.luau` | `ServerScriptService.Server` | Wires runs and fights to players and remotes |
-| `src/client/CombatDebug.client.luau` | `StarterPlayerScripts.Client` | Bare-bones combat debug UI (it only draws state and sends input) |
-| `src/client/RunDebug.client.luau` | `StarterPlayerScripts.Client` | Bare-bones run debug UI: map, rewards, events, shop, rest |
+| `src/client/Main.client.luau` | `StarterPlayerScripts.Client` | Game UI entry: title menu, and routes server updates to the screens |
+| `src/client/UI` | `StarterPlayerScripts.Client.UI` | Screens: `CombatScreen`, `QteOverlay`, `MapScreen`, `RunScreens`, `Hud`, plus `Kit` (shared widgets) and `Theme` (palette, fonts, icons) |
 | `tests` | n/a | Engine tests, run with the `luau` CLI |
 
 The engine modules have no Roblox instances in them and take `Content` as an argument, so the same code runs in Studio and in the tests. They require each other with `require("./Module")`.
@@ -55,6 +55,16 @@ The five kinds are Timing, Sequence, Mash, Hold and Trace, and each is graded Mi
 - **Tuning** lives in `src/shared/Data/Qte.luau`: windows by difficulty 1 to 5, Focus and Dazed (±20% window per stack), the act difficulty bonus and the accessibility options (wider windows, or "always Good").
 
 Inputs are timed on the client, so a determined cheater can still fake a clean QTE. The server's checks stop instant replies and replies sent after the fact, which is as far as a client-drawn QTE can go.
+
+## UI
+
+The client is flat 2D ScreenGuis in a pixel style: hard-edged panels with a dark outline, Press Start 2P for headings and numbers, Arcade for body text. It only draws what the server sends and reports what the player did.
+
+- **Combat:** the hero on the left, up to 3 enemies on the right, and the hand, energy, piles and End Turn along the bottom. Each enemy's intent is the one highlighted element (a gold-outlined badge with the damage, and a tag when it can be defended with a QTE).
+- **QTEs:** Timing is a marker sweeping a bar with a gold band (the bright centre is Perfect), then a big "PERFECT!" pop-up. Sequence shows arrow tiles with on-screen buttons, Mash a counter with Good and Perfect marks, Hold a filling bar with a gold zone, and Trace numbered dots. The client draws each from the server's `params`, so the band and zones match the grading windows.
+- **Map:** an act progress bar with the Treasure, Rest and Boss stops, 2 or 3 path cards (icon, name, one line, what follows), and **View full map** for the whole graph.
+- **Run screens:** reward, boss relic, event (with requirement and cost tags), event result (revealed cards flip in), shop, camp, treasure, card select (upgrades show paths A and B side by side, changed numbers in gold) and the end of the run.
+- **Art:** there are no sprites yet. Icons are glyphs and units show their initial; give a `Theme.icons` entry an `image` and that sprite is drawn instead. The layout targets about 1100 x 620 and scales between 0.6 and 1.5 to fit the screen.
 
 ## Tests
 
