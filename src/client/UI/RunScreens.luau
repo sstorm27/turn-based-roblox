@@ -92,7 +92,15 @@ function RunScreens:_button(parent: Instance, text: string, onClick: () -> (), o
 end
 
 -- A relic as a tile: icon, name and text.
-local function relicTile(parent: Instance, relic, width: number, footer: string?, onClick: (() -> ())?, enabled: boolean?)
+local function relicTile(
+	parent: Instance,
+	relic,
+	width: number,
+	footer: string?,
+	onClick: (() -> ())?,
+	enabled: boolean?,
+	footerColor: Color3?
+)
 	local live = enabled ~= false
 	local rarity = Theme.rarityColors[relic.rarity] or C.gold
 	local tile = make("TextButton", {
@@ -127,7 +135,7 @@ local function relicTile(parent: Instance, relic, width: number, footer: string?
 		Parent = tile,
 	})
 	if footer then
-		local tag = Kit.chip(footer, C.gold, {
+		local tag = Kit.chip(footer, footerColor or C.gold, {
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = UDim2.new(0.5, 0, 1, 0),
 			Size = UDim2.fromOffset(0, 22),
@@ -273,7 +281,7 @@ end
 function screens.Shop(self, screen)
 	local gold = self.run.gold
 	self:_heading("SHOP", C.gold)
-	local cards = self:_row(S.cardH + 18, 16)
+	local cards = self:_row(S.cardH + 36, 16)
 	for index, entry in screen.cards do
 		local affordable = entry.price <= gold
 		local footer = if entry.sold then "SOLD" elseif entry.onSale then `{entry.price}g SALE` else `{entry.price}g`
@@ -295,7 +303,8 @@ function screens.Shop(self, screen)
 			function()
 				act({ kind = "Buy", item = "Relic", index = index })
 			end,
-			not entry.sold and entry.price <= gold
+			not entry.sold and entry.price <= gold,
+			if entry.sold then C.textDim elseif entry.price <= gold then C.gold else C.hp
 		)
 	end
 	local services = self:_row(50, 14)

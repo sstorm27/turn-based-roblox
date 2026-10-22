@@ -54,11 +54,14 @@ local function statusTooltip(statusId: string, stacks: number): string
 	return `<b>{def.name} {stacks}</b>\n{def.text or ""}`
 end
 
+-- Non-attack intents get a word so they read without a tooltip.
+local INTENT_WORDS = { Defend = "Block", Buff = "Buff", Debuff = "Debuff", Pollute = "Junk" }
+
 local function intentLabel(intent): string
 	if intent.damage then
 		return if intent.hits and intent.hits > 1 then `{intent.damage}x{intent.hits}` else tostring(intent.damage)
 	end
-	return ""
+	return INTENT_WORDS[intent.type] or intent.type
 end
 
 local function intentTooltip(enemyName: string, intent): string
@@ -117,13 +120,15 @@ local function newUnit(parent: Instance, isHero: boolean, onClick: () -> ()): Un
 		local stroke = intent:FindFirstChildOfClass("UIStroke") :: UIStroke
 		stroke.Color = C.gold
 		widget.intent = intent
-		widget.intentText = Kit.title({
+		local intentText = Kit.title({
 			Position = UDim2.fromOffset(34, 0),
 			Size = UDim2.new(1, -38, 1, 0),
-			TextSize = 14,
+			TextScaled = true,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			Parent = intent,
 		})
+		make("UITextSizeConstraint", { MaxTextSize = 14, MinTextSize = 8, Parent = intentText })
+		widget.intentText = intentText
 		widget.intentQte = Kit.chip("QTE", C.perfect, {
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = UDim2.new(1, 0, 0, 0),
@@ -290,8 +295,7 @@ local function updateUnit(widget: UnitWidget, unit, intent)
 		Kit.clear(widget.statusRow)
 		for id, stacks in unit.statuses do
 			local def = Content.Statuses[id]
-			local short = def and string.sub(def.name, 1, 4) or id
-			local chip = Kit.chip(`{short} {stacks}`, statusColor(id), {
+			local chip = Kit.chip(`{if def then def.name else id} {stacks}`, statusColor(id), {
 				Name = id,
 				Size = UDim2.fromOffset(0, 20),
 				Active = true,
@@ -404,12 +408,12 @@ function CombatScreen.new(parent: Instance, callbacks: { onQteGraded: (qteId: st
 	self.drawText = pile("draw", UDim2.new(0, S.gutter, 1, -14), Vector2.new(0, 1), "<b>Draw pile</b>\nYou draw 5 cards each turn.")
 	self.discardText = pile(
 		"discard",
-		UDim2.new(1, -S.gutter - 164, 1, -14),
+		UDim2.new(1, -S.gutter, 1, -86),
 		Vector2.new(1, 1),
 		"<b>Discard pile</b>\nShuffled back into the draw pile when it runs out."
 	)
 	local exhaustText, exhaustChip =
-		pile("exhaust", UDim2.new(1, -S.gutter - 164, 1, -56), Vector2.new(1, 1), "<b>Exhausted</b>\nRemoved for the rest of this fight.")
+		pile("exhaust", UDim2.new(1, -S.gutter - 78, 1, -86), Vector2.new(1, 1), "<b>Exhausted</b>\nRemoved for the rest of this fight.")
 	self.exhaustText, self.exhaustChip = exhaustText, exhaustChip
 
 	self.endTurn = nil

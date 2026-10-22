@@ -196,15 +196,16 @@ function MapScreen:_pathCard(card)
 		TextSize = 14,
 		Parent = face,
 	})
-	Kit.text({
+	local hint = Kit.text({
 		Position = UDim2.fromOffset(10, 140),
-		Size = UDim2.new(1, -20, 0, 48),
+		Size = UDim2.new(1, -20, 1, -178),
 		Text = card.hint,
-		TextSize = 18,
+		TextScaled = true,
 		TextColor3 = C.textDim,
 		TextYAlignment = Enum.TextYAlignment.Top,
 		Parent = face,
 	})
+	make("UITextSizeConstraint", { MaxTextSize = 18, MinTextSize = 10, Parent = hint })
 	-- What follows this node.
 	local leads = make("Frame", {
 		AnchorPoint = Vector2.new(0, 1),

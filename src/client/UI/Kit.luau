@@ -351,19 +351,23 @@ function Kit.card(card: any, props: { [string]: any }?, onClick: (() -> ())?, op
 		ZIndex = z + 1,
 		Parent = face,
 	})
+	local qteKind = if type(card.qte) == "table" then card.qte.kind else card.qte
+	-- Long card text (QTE cards spell out their bonuses) shrinks to fit,
+	-- above the QTE chip when there is one.
+	local reserved = if qteKind then 22 * scale else 4
 	local body = Kit.text({
 		Position = UDim2.fromOffset(4, 16 * scale),
-		Size = UDim2.new(1, -8, 1, -(36 * scale)),
+		Size = UDim2.new(1, -8, 1, -(16 * scale + reserved)),
 		Text = opts.richText or card.text or "",
 		RichText = opts.richText ~= nil,
-		TextSize = math.floor(16 * scale),
+		TextScaled = true,
 		TextYAlignment = Enum.TextYAlignment.Top,
 		ZIndex = z + 1,
 		Parent = face,
 	})
+	make("UITextSizeConstraint", { MaxTextSize = math.floor(16 * scale), MinTextSize = 8, Parent = body })
 	body.TextColor3 = if enabled then C.text else C.textDim
 
-	local qteKind = if type(card.qte) == "table" then card.qte.kind else card.qte
 	if qteKind then
 		Kit.chip(`QTE {qteKind}`, C.perfect, {
 			AnchorPoint = Vector2.new(0.5, 1),
@@ -375,9 +379,10 @@ function Kit.card(card: any, props: { [string]: any }?, onClick: (() -> ())?, op
 		})
 	end
 	if opts.footer then
+		-- Under the card, so it never covers the text or the QTE chip.
 		local tag = Kit.chip(opts.footer, opts.footerColor or C.gold, {
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.new(0.5, 0, 1, 0),
+			AnchorPoint = Vector2.new(0.5, 0),
+			Position = UDim2.new(0.5, 0, 1, 6),
 			Size = UDim2.fromOffset(0, 22),
 			TextSize = 18,
 			ZIndex = z + 3,
