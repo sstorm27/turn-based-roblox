@@ -111,12 +111,13 @@ local function relicTile(
 		Parent = parent,
 	})
 	Kit.outline(if live then rarity else C.disabled).Parent = tile
-	Kit.icon("relic", 40, {
+	Kit.icon(relic.id, 36, {
 		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 10),
+		Position = UDim2.new(0.5, 0, 0, 12),
 		TextColor3 = if live then rarity else C.disabled,
+		TextTransparency = if live then 0 else 0.5,
 		Parent = tile,
-	})
+	}, "relic")
 	Kit.title({
 		Position = UDim2.fromOffset(6, 56),
 		Size = UDim2.new(1, -12, 0, 18),
@@ -217,9 +218,9 @@ function screens.Event(self, screen)
 		BackgroundTransparency = 1,
 		Parent = self.body,
 	}, { Kit.hlist(20, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Top) })
-	-- Placeholder art panel until event art exists.
+	-- The Event node icon stands in until events have their own art.
 	local art = Kit.panel({ Size = UDim2.fromOffset(220, 220), BackgroundColor3 = Theme.nodeColors.Event, Parent = content })
-	Kit.icon("Event", 110, { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Parent = art })
+	Kit.icon("Event", 108, { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Parent = art })
 
 	local column = make("Frame", { Size = UDim2.new(1, -240, 1, 0), BackgroundTransparency = 1, Parent = content }, { Kit.vlist(10, Enum.HorizontalAlignment.Left) })
 	Kit.text({
@@ -343,7 +344,7 @@ function screens.Rest(self, screen)
 			Parent = row,
 		})
 		Kit.outline(if option.available then Theme.nodeColors.Rest else C.disabled).Parent = tile
-		Kit.icon(style.icon, 56, {
+		Kit.icon(style.icon, 48, {
 			AnchorPoint = Vector2.new(0.5, 0),
 			Position = UDim2.new(0.5, 0, 0, 18),
 			TextTransparency = if option.available then 0 else 0.6,

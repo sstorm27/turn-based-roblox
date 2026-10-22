@@ -7,6 +7,7 @@
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
+local Sprites = require(script.Parent.Sprites)
 local Theme = require(script.Parent.Theme)
 
 local C = Theme.colors
@@ -135,23 +136,127 @@ function Kit.title(props: { [string]: any })
 	return Kit.text(props)
 end
 
--- A glyph today, a pixel sprite once Theme.icons[name].image is set.
-function Kit.icon(name: string, size: number, props: { [string]: any }?)
-	local spec = Theme.icons[name] or Theme.icons.Unknown
+-- Pixel sprites become a few Frames: runs of one colour are merged into
+-- rectangles, so a 12x12 icon is a few dozen Frames, not 144. Cached by name.
+local rectCache: { [string]: { { number } } } = {}
+
+local function spriteRects(name: string, rows: { string }): { { number } }
+	local cached = rectCache[name]
+	if cached then
+		return cached
+	end
+	-- Horizontal runs first: { x, y, w, h, colourIndex }
+	local rects = {}
+	local open: { [string]: { number } } = {} -- runs from the row above, by "x,w,ch"
+	for y, row in rows do
+		local nextOpen = {}
+		local x = 1
+		while x <= #row do
+			local ch = string.sub(row, x, x)
+			local w = 1
+			while string.sub(row, x + w, x + w) == ch do
+				w += 1
+			end
+			if ch ~= "." then
+				local key = `{x},{w},{ch}`
+				local above = open[key]
+				if above then
+					above[4] += 1 -- grow the run above down by a row
+					nextOpen[key] = above
+				else
+					local rect = { x - 1, y - 1, w, 1, string.byte(ch) }
+					table.insert(rects, rect)
+					nextOpen[key] = rect
+				end
+			end
+			x += w
+		end
+		open = nextOpen
+	end
+	rectCache[name] = rects
+	return rects
+end
+
+local paletteColors: { [number]: Color3 } = {}
+for ch, rgb in Sprites.palette do
+	paletteColors[string.byte(ch)] = Color3.fromRGB(rgb[1], rgb[2], rgb[3])
+end
+
+-- Whether `name` has art (a sprite or an uploaded image), not just a glyph.
+function Kit.hasArt(name: string): boolean
+	local spec = Theme.icons[name]
+	return spec ~= nil and (spec.image ~= nil or spec.sprite ~= nil)
+end
+
+-- An icon by Theme.icons name: an uploaded image if it has one, else its
+-- pixel sprite, else its glyph. `fallback` is used when `name` has none.
+-- TextColor3 tints glyphs only; TextTransparency fades all three kinds.
+function Kit.icon(name: string, size: number, props: { [string]: any }?, fallback: string?)
+	local spec = Theme.icons[name] or (fallback and Theme.icons[fallback]) or Theme.icons.Unknown
 	local p = props or {}
 	p.Size = p.Size or UDim2.fromOffset(size, size)
 	p.BackgroundTransparency = 1
+	local fade = p.TextTransparency or 0
+	if spec.image or spec.sprite then
+		p.TextColor3 = nil
+		p.TextTransparency = nil
+	end
 	if spec.image then
 		p.Image = spec.image
+		p.ImageTransparency = fade
 		p.ScaleType = Enum.ScaleType.Fit
 		p.ResampleMode = Enum.ResamplerMode.Pixelated
 		return make("ImageLabel", p)
+	end
+	if spec.sprite then
+		local rows = Sprites.art[spec.sprite]
+		local frame = make("Frame", p)
+		local gridW, gridH = #rows[1], #rows
+		-- Sized in pixels, each edge is rounded from its grid line, so
+		-- neighbouring rectangles always meet with no gap. Sized by scale,
+		-- the rectangles scale with it.
+		local px, py = p.Size.X.Offset, p.Size.Y.Offset
+		local inPixels = p.Size.X.Scale == 0 and p.Size.Y.Scale == 0
+		for _, r in spriteRects(spec.sprite, rows) do
+			local position, rectSize
+			if inPixels then
+				local left, top = math.round(r[1] * px / gridW), math.round(r[2] * py / gridH)
+				local right, bottom = math.round((r[1] + r[3]) * px / gridW), math.round((r[2] + r[4]) * py / gridH)
+				position, rectSize = UDim2.fromOffset(left, top), UDim2.fromOffset(right - left, bottom - top)
+			else
+				position, rectSize = UDim2.fromScale(r[1] / gridW, r[2] / gridH), UDim2.fromScale(r[3] / gridW, r[4] / gridH)
+			end
+			make("Frame", {
+				Position = position,
+				Size = rectSize,
+				BackgroundColor3 = paletteColors[r[5]],
+				BackgroundTransparency = fade,
+				ZIndex = frame.ZIndex,
+				Parent = frame,
+			})
+		end
+		return frame
 	end
 	p.Text = spec.glyph
 	p.TextColor3 = p.TextColor3 or spec.color
 	p.FontFace = Theme.fonts.icon
 	p.TextScaled = true
 	return make("TextLabel", p)
+end
+
+-- Fades an icon made by Kit.icon, whichever kind it is.
+function Kit.setIconTransparency(icon: GuiObject, transparency: number)
+	if icon:IsA("TextLabel") then
+		icon.TextTransparency = transparency
+	elseif icon:IsA("ImageLabel") then
+		icon.ImageTransparency = transparency
+	else
+		for _, pixel in icon:GetChildren() do
+			if pixel:IsA("Frame") then
+				pixel.BackgroundTransparency = transparency
+			end
+		end
+	end
 end
 
 -- Buttons ----------------------------------------------------------------------------
@@ -351,6 +456,16 @@ function Kit.card(card: any, props: { [string]: any }?, onClick: (() -> ())?, op
 		ZIndex = z + 1,
 		Parent = face,
 	})
+	local typeIcon = `{card.type}Card`
+	if Kit.hasArt(typeIcon) then
+		Kit.icon(typeIcon, math.floor(12 * scale), {
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, -3, 0, 3),
+			TextTransparency = if enabled then 0 else 0.5,
+			ZIndex = z + 1,
+			Parent = face,
+		})
+	end
 	local qteKind = if type(card.qte) == "table" then card.qte.kind else card.qte
 	-- Long card text (QTE cards spell out their bonuses) shrinks to fit,
 	-- above the QTE chip when there is one.

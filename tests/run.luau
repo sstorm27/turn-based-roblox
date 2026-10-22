@@ -8,6 +8,7 @@ local ok = TestKit.run({
 	Content = require("./Content.spec"),
 	Map = require("./Map.spec"),
 	Run = require("./Run.spec"),
+	Sprites = require("./Sprites.spec"),
 })
 
 if not ok then

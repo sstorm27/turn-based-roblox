@@ -54,10 +54,10 @@ function Hud.new(parent: Instance, modalLayer: Instance, callbacks: { onMainMenu
 
 	self.heroName = Kit.title({ AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 20), TextSize = 12, ZIndex = 11, Parent = left })
 	local hp = make("Frame", { Size = UDim2.fromOffset(150, 24), BackgroundTransparency = 1, ZIndex = 11, Parent = left }, { Kit.hlist(6, Enum.HorizontalAlignment.Left) })
-	Kit.icon("hp", 20, { ZIndex = 11, Parent = hp })
+	Kit.icon("hp", 24, { ZIndex = 11, Parent = hp })
 	self.hpBar = Kit.bar({ Size = UDim2.fromOffset(120, 16), ZIndex = 11, Parent = hp }, C.hp)
-	local gold = make("Frame", { Size = UDim2.fromOffset(80, 24), BackgroundTransparency = 1, ZIndex = 11, Active = true, Parent = left }, { Kit.hlist(6, Enum.HorizontalAlignment.Left) })
-	Kit.icon("gold", 16, { ZIndex = 11, Parent = gold })
+	local gold = make("Frame", { Size = UDim2.fromOffset(86, 24), BackgroundTransparency = 1, ZIndex = 11, Active = true, Parent = left }, { Kit.hlist(6, Enum.HorizontalAlignment.Left) })
+	Kit.icon("gold", 24, { ZIndex = 11, Parent = gold })
 	self.goldText = Kit.title({ Size = UDim2.fromOffset(56, 20), TextSize = 12, TextColor3 = C.gold, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 11, Parent = gold })
 	Kit.tooltip(gold, "<b>Gold</b>\nSpend it in shops.")
 	self.floorText = Kit.text({ AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 20), TextSize = 18, TextColor3 = C.textDim, ZIndex = 11, Parent = left })
@@ -111,13 +111,13 @@ function Hud:setRun(run)
 			Parent = self.relicRow,
 		})
 		Kit.outline(Theme.rarityColors[relic.rarity] or C.gold, 2).Parent = tile
-		Kit.icon("relic", 18, {
+		Kit.icon(relic.id, 24, {
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = UDim2.fromScale(0.5, 0.5),
 			TextColor3 = Theme.rarityColors[relic.rarity] or C.gold,
 			ZIndex = 12,
 			Parent = tile,
-		})
+		}, "relic")
 		Kit.tooltip(tile, `<b>{relic.name}</b>\n{relic.text}`)
 	end
 end

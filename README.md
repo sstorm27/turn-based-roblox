@@ -23,7 +23,8 @@ Controls: tap a card to lift it, then tap it again to play it, or tap an enemy t
 | `src/server/Run` | `ServerScriptService.Server.Run` | Pure Luau run engine: `Run`, `MapGenerator`, `EventRunner`, `RunEffects`, `Rewards`, `RunValidator` |
 | `src/server/CombatService.server.luau` | `ServerScriptService.Server` | Wires runs and fights to players and remotes |
 | `src/client/Main.client.luau` | `StarterPlayerScripts.Client` | Game UI entry: title menu, and routes server updates to the screens |
-| `src/client/UI` | `StarterPlayerScripts.Client.UI` | Screens: `CombatScreen`, `QteOverlay`, `MapScreen`, `RunScreens`, `Hud`, plus `Kit` (shared widgets) and `Theme` (palette, fonts, icons) |
+| `src/client/UI` | `StarterPlayerScripts.Client.UI` | Screens: `CombatScreen`, `QteOverlay`, `MapScreen`, `RunScreens`, `Hud`, plus `Kit` (shared widgets), `Theme` (palette, fonts, icons) and `Sprites` (generated pixel art) |
+| `tools/sprites.py` | n/a | The pixel art as text grids; writes `Sprites.luau` and the PNGs in `art/sprites` |
 | `tests` | n/a | Engine tests, run with the `luau` CLI |
 
 The engine modules have no Roblox instances in them and take `Content` as an argument, so the same code runs in Studio and in the tests. They require each other with `require("./Module")`.
@@ -64,7 +65,19 @@ The client is flat 2D ScreenGuis in a pixel style: hard-edged panels with a dark
 - **QTEs:** Timing is a marker sweeping a bar with a gold band (the bright centre is Perfect), then a big "PERFECT!" pop-up. Sequence shows arrow tiles with on-screen buttons, Mash a counter with Good and Perfect marks, Hold a filling bar with a gold zone, and Trace numbered dots. The client draws each from the server's `params`, so the band and zones match the grading windows.
 - **Map:** an act progress bar with the Treasure, Rest and Boss stops, 2 or 3 path cards (icon, name, one line, what follows), and **View full map** for the whole graph.
 - **Run screens:** reward, boss relic, event (with requirement and cost tags), event result (revealed cards flip in), shop, camp, treasure, card select (upgrades show paths A and B side by side, changed numbers in gold) and the end of the run.
-- **Art:** there are no sprites yet. Icons are glyphs and units show their initial; give a `Theme.icons` entry an `image` and that sprite is drawn instead. The layout targets about 1100 x 620 and scales between 0.6 and 1.5 to fit the screen.
+- **Art:** 2D pixel sprites (12x12 icons, 16x16 units) for the hero, enemies, card types, intents, statuses, relics and map nodes. The layout targets about 1100 x 620 and scales between 0.6 and 1.5 to fit the screen. See [Pixel art](#pixel-art).
+
+## Pixel art
+
+The art lives as text grids in `tools/sprites.py`, one character per pixel. Running `python3 tools/sprites.py` regenerates `src/client/UI/Sprites.luau`, and `Kit.icon` draws each sprite as a few dozen merged Frames, so the art works with no uploads. Every sprite is also a `Theme.icons` entry, named by its id: `Warden`, `Cultist`, `Poison`, `IronBuckle`, `Combat`, `Attack` (the intent), and `AttackCard` for card types.
+
+`art/sprites/` has each sprite as an 8x PNG plus `sheet.png`, a preview of all of them (`python3 tools/sprites.py --png art/sprites`, needs Pillow). To use uploaded images instead of Frames, which is lighter on big screens:
+
+1. In Studio, open **Asset Manager** and use **Bulk Import** on the PNGs you want.
+2. Right-click each image and **Copy Asset ID**.
+3. Add it to `Theme.iconImages` in `src/client/UI/Theme.luau`, e.g. `Warden = "rbxassetid://1234567890"`.
+
+An icon with an image shows the image; the rest keep their Frames. A name with neither falls back to its glyph.
 
 ## Tests
 
