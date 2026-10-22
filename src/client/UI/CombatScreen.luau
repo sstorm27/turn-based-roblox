@@ -86,6 +86,8 @@ end
 type UnitWidget = {
 	root: Frame,
 	sprite: TextButton,
+	art: GuiObject?,
+	artId: string?,
 	marker: TextLabel,
 	intent: Frame?,
 	intentIcon: GuiObject?,
@@ -169,7 +171,7 @@ local function newUnit(parent: Instance, isHero: boolean, onClick: () -> ()): Un
 	Kit.outline().Parent = sprite
 	sprite.Activated:Connect(onClick)
 	widget.sprite = sprite
-	-- Placeholder art: the unit's initial, until pixel sprites land.
+	-- The unit's initial stands in for a unit with no sprite.
 	Kit.title({
 		Name = "Initial",
 		Size = UDim2.new(1, 0, 1, -18),
@@ -239,7 +241,22 @@ local function updateUnit(widget: UnitWidget, unit, intent)
 	local nameLabel = widget.sprite:FindFirstChild("UnitName") :: TextLabel
 	local initial = widget.sprite:FindFirstChild("Initial") :: TextLabel
 	nameLabel.Text = unit.name
-	initial.Text = string.sub(unit.name, 1, 1)
+	if widget.artId ~= unit.defId then
+		widget.artId = unit.defId
+		if widget.art then
+			widget.art:Destroy()
+			widget.art = nil
+		end
+		-- 16x16 sprites at 5x, above the name strip.
+		if unit.defId and Kit.hasArt(unit.defId) then
+			widget.art = Kit.icon(unit.defId, 80, {
+				AnchorPoint = Vector2.new(0.5, 0),
+				Position = UDim2.new(0.5, 0, 0, 6),
+				Parent = widget.sprite,
+			})
+		end
+	end
+	initial.Text = if widget.art then "" else string.sub(unit.name, 1, 1)
 	widget.hpBar.set(unit.hp, unit.maxHp)
 	widget.blockBadge.Visible = unit.block > 0
 	widget.blockText.Text = tostring(unit.block)
@@ -248,6 +265,9 @@ local function updateUnit(widget: UnitWidget, unit, intent)
 		widget.root.Visible = true
 		TweenService:Create(widget.sprite, TweenInfo.new(0.4), { BackgroundTransparency = 0.8 }):Play()
 		initial.TextTransparency = 0.8
+		if widget.art then
+			Kit.setIconTransparency(widget.art, 0.8)
+		end
 		if widget.intent then
 			widget.intent.Visible = false
 		end
@@ -267,7 +287,7 @@ local function updateUnit(widget: UnitWidget, unit, intent)
 				if widget.intentIcon then
 					widget.intentIcon:Destroy()
 				end
-				widget.intentIcon = Kit.icon(intent.type, 22, { Position = UDim2.fromOffset(8, 6), Parent = intentFrame })
+				widget.intentIcon = Kit.icon(intent.type, 24, { Position = UDim2.fromOffset(7, 5), Parent = intentFrame })
 			end
 			label.Text = intentLabel(intent)
 			qteTag.Visible = intent.defenseQte ~= nil
@@ -295,12 +315,19 @@ local function updateUnit(widget: UnitWidget, unit, intent)
 		Kit.clear(widget.statusRow)
 		for id, stacks in unit.statuses do
 			local def = Content.Statuses[id]
-			local chip = Kit.chip(`{if def then def.name else id} {stacks}`, statusColor(id), {
+			-- Icon and stacks; the name is in the tooltip.
+			local hasArt = Kit.hasArt(id)
+			local chip = Kit.chip(if hasArt then tostring(stacks) else `{if def then def.name else id} {stacks}`, statusColor(id), {
 				Name = id,
-				Size = UDim2.fromOffset(0, 20),
+				Size = UDim2.fromOffset(0, 24),
 				Active = true,
 				Parent = widget.statusRow,
 			})
+			if hasArt then
+				local pad = chip:FindFirstChildOfClass("UIPadding") :: UIPadding
+				pad.PaddingLeft = UDim.new(0, 26)
+				Kit.icon(id, 24, { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, -26, 0.5, 0), Parent = chip })
+			end
 			Kit.tooltip(chip, statusTooltip(id, stacks))
 		end
 	end
@@ -400,7 +427,7 @@ function CombatScreen.new(parent: Instance, callbacks: { onQteGraded: (qteId: st
 			Active = true,
 			Parent = bottom,
 		}, { Kit.hlist(6) })
-		Kit.icon(iconName, 18, { Parent = chip })
+		Kit.icon(iconName, 24, { Parent = chip })
 		local count = Kit.title({ Size = UDim2.fromOffset(30, 20), TextSize = 12, Parent = chip })
 		Kit.tooltip(chip, tip)
 		return count, chip

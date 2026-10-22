@@ -6,10 +6,13 @@
 	panels with hard edges and a dark outline, few elements per screen, and
 	intents as the one highlighted element in combat.
 
-	Icons: each entry is a glyph today. Give it an `image` (an rbxassetid of
-	a pixel sprite) and Kit.icon draws the sprite instead, so swapping in
-	real art needs no screen code.
+	Icons: every name in Sprites.art (generated from tools/sprites.py) gets
+	its pixel sprite, drawn by Kit.icon with Frames. Give an entry an
+	`image` (an uploaded rbxassetid) and Kit.icon shows that instead. The
+	glyph is the fallback for names without art.
 ]]
+
+local Sprites = require(script.Parent.Sprites)
 
 local Theme = {}
 
@@ -129,6 +132,23 @@ Theme.icons = {
 	Pollute = { glyph = "☁", color = rgb(150, 143, 176) },
 	Unknown = { glyph = "?", color = rgb(150, 143, 176) },
 }
+
+-- Uploaded PNGs (see tools/README.md), by icon name. Each one replaces
+-- that icon's Frame-drawn sprite, e.g. Warden = "rbxassetid://123".
+Theme.iconImages = {} :: { [string]: string }
+
+-- Every sprite becomes an icon: units by enemy or hero id, statuses and
+-- relics by id, card types as "<Type>Card".
+for name in Sprites.art do
+	local spec = Theme.icons[name] or { glyph = "?", color = Theme.colors.textDim }
+	spec.sprite = name
+	Theme.icons[name] = spec
+end
+for name, image in Theme.iconImages do
+	if Theme.icons[name] then
+		Theme.icons[name].image = image
+	end
+end
 
 -- What each intent type means, for tooltips.
 Theme.intentText = {
