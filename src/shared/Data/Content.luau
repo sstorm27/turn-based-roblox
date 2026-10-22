@@ -1,5 +1,5 @@
 --[[
-	All content tables in one place. The combat engine takes this as an
+	All content tables in one place. The combat and run engines take this as an
 	argument instead of requiring it, so it runs the same in Roblox and in
 	tests.
 ]]
@@ -11,6 +11,10 @@ local Content = {
 	Heroes = require("./Heroes"),
 	Encounters = require("./Encounters"),
 	Qte = require("./Qte"),
+	Relics = require("./Relics"),
+	Events = require("./Events"),
+	Acts = require("./Acts"),
+	RunRules = require("./RunRules"),
 }
 
 -- The card definition with an upgrade path (A or B) applied, or nil.

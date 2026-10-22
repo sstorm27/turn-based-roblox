@@ -15,6 +15,6 @@ jobs:
           unzip -q luau.zip -d "$HOME/luau"
           echo "$HOME/luau" >> "$GITHUB_PATH"
       - name: Type-check and lint the engine
-        run: luau-analyze src/server/Combat/*.luau src/shared/Data/*.luau tests/*.luau
+        run: luau-analyze src/server/Combat/*.luau src/server/Run/*.luau src/shared/Data/*.luau tests/*.luau
       - name: Run engine tests
         run: luau tests/run.luau

@@ -1,23 +1,45 @@
 --[[
-	RemoteEvents for combat. The server creates them; clients wait for them.
+	RemoteEvents for runs and combat. The server creates them; clients wait
+	for them.
 
 	Client to server
-		StartCombat  (encounterId?)
+		StartRun     ()                       starts a new run (replaces any other)
+		ChooseNode   (nodeId)                 a path card on the map
+		ChooseOption (action)                 { kind = "Option", index } events,
+		                                      rest, rewards, boss relics;
+		                                      { kind = "Skip" }, { kind = "Proceed" },
+		                                      { kind = "Buy", item, index? },
+		                                      { kind = "Select", uid, path? },
+		                                      { kind = "Cancel" }
+		StartCombat  (encounterId?)           a single debug fight
 		PlayCard     (cardUid, targetId?)
 		EndTurn      ()
 		QteResult    (qteId, inputs)          raw input times, graded on the server
 		SetQteAssist ({ wideWindows, alwaysGood })
 
 	Server to client
-		StateUpdate  (snapshot, events)       snapshot of what the player sees,
-		                                      plus the ordered events to animate
+		StateUpdate  (snapshot, events)       combat snapshot of what the player
+		                                      sees, plus the ordered events to animate
+		RunUpdate    (snapshot)               run snapshot: map, screen, deck, HP
 		QteStart     ({ qteId, kind, difficulty, params, deadline, source })
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
-local NAMES = { "StartCombat", "PlayCard", "EndTurn", "QteResult", "SetQteAssist", "StateUpdate", "QteStart" }
+local NAMES = {
+	"StartRun",
+	"ChooseNode",
+	"ChooseOption",
+	"StartCombat",
+	"PlayCard",
+	"EndTurn",
+	"QteResult",
+	"SetQteAssist",
+	"StateUpdate",
+	"RunUpdate",
+	"QteStart",
+}
 
 local Remotes = {}
 

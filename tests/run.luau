@@ -6,6 +6,8 @@ local ok = TestKit.run({
 	Qte = require("./Qte.spec"),
 	EnemyAI = require("./EnemyAI.spec"),
 	Content = require("./Content.spec"),
+	Map = require("./Map.spec"),
+	Run = require("./Run.spec"),
 })
 
 if not ok then

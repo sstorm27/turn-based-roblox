@@ -6,7 +6,8 @@
 
 	Fields
 		id, name, cost (number or "X"), type (Attack/Skill/Power/Curse/Wound),
-		rarity, target ("Enemy", "AllEnemies", "Self", "None"), text, effects,
+		rarity (Starter/Common/Uncommon/Rare/Special), class (a hero id or
+		"Neutral": which reward pool the card is in), target ("Enemy", "AllEnemies", "Self", "None"), text, effects,
 		keywords ({ Exhaust = true, ... }), upgrades ({ A = {...}, B = {...} }).
 
 	Effect targets default from the card: Damage and ApplyStatus hit the
@@ -31,6 +32,7 @@ Cards.Strike = {
 	cost = 1,
 	type = "Attack",
 	rarity = "Starter",
+	class = "Warden",
 	target = "Enemy",
 	text = "Deal 6 damage.",
 	effects = { { op = "Damage", amount = 6 } },
@@ -51,6 +53,7 @@ Cards.Guard = {
 	cost = 1,
 	type = "Skill",
 	rarity = "Starter",
+	class = "Warden",
 	target = "Self",
 	text = "Gain 5 Block.",
 	effects = { { op = "Block", amount = 5 } },
@@ -68,6 +71,7 @@ Cards.ShieldBash = {
 	cost = 1,
 	type = "Attack",
 	rarity = "Starter",
+	class = "Warden",
 	target = "Enemy",
 	text = "Deal damage equal to your Block.",
 	effects = { { op = "Damage", amountFrom = "Block", amount = 0 } },
@@ -91,6 +95,7 @@ Cards.Brace = {
 	cost = 0,
 	type = "Skill",
 	rarity = "Starter",
+	class = "Warden",
 	target = "Self",
 	text = "Gain 3 Block. Draw 1 card.",
 	effects = { { op = "Block", amount = 3 }, { op = "Draw", count = 1 } },
@@ -108,6 +113,7 @@ Cards.Smite = {
 	cost = 2,
 	type = "Attack",
 	rarity = "Uncommon",
+	class = "Warden",
 	target = "Enemy",
 	text = "Deal 12 damage. QTE Timing: Good +4, Perfect +8 and 2 Vulnerable.",
 	effects = { { op = "Damage", amount = 12 } },
@@ -140,6 +146,7 @@ Cards.Bulwark = {
 	cost = 2,
 	type = "Skill",
 	rarity = "Uncommon",
+	class = "Warden",
 	target = "Self",
 	text = "Gain 12 Block. QTE Hold: Good +4 Block, Perfect +6 Block and 1 Fortify.",
 	effects = { { op = "Block", amount = 12 } },
@@ -156,6 +163,7 @@ Cards.ShieldStorm = {
 	cost = 1,
 	type = "Attack",
 	rarity = "Uncommon",
+	class = "Warden",
 	target = "AllEnemies",
 	text = "Deal 5 damage to all enemies. QTE Mash: Good +2, Perfect +4 and 1 Weak to all.",
 	effects = { { op = "Damage", amount = 5 } },
@@ -172,6 +180,7 @@ Cards.Riposte = {
 	cost = 1,
 	type = "Skill",
 	rarity = "Uncommon",
+	class = "Warden",
 	target = "Self",
 	text = "Gain 6 Block and 2 Thorns. QTE Sequence: Good +3 Block, Perfect +3 Block and 2 Thorns.",
 	effects = { { op = "Block", amount = 6 }, { op = "ApplyStatus", status = "Thorns", stacks = 2 } },
@@ -188,6 +197,7 @@ Cards.Judgement = {
 	cost = 3,
 	type = "Attack",
 	rarity = "Rare",
+	class = "Warden",
 	target = "Enemy",
 	text = "Deal 20 damage. Exhaust. QTE Trace: Good +8, Perfect +16 and Stun.",
 	keywords = { Exhaust = true },
@@ -207,6 +217,7 @@ Cards.IronWill = {
 	cost = 1,
 	type = "Power",
 	rarity = "Uncommon",
+	class = "Warden",
 	target = "Self",
 	text = "Gain 2 Dexterity.",
 	effects = { { op = "ApplyStatus", status = "Dexterity", stacks = 2 } },
@@ -217,10 +228,199 @@ Cards.Steady = {
 	cost = 0,
 	type = "Skill",
 	rarity = "Common",
+	class = "Warden",
 	target = "Self",
 	text = "Gain 2 Focus (QTE windows +20% each). Draw 1 card. Exhaust.",
 	keywords = { Exhaust = true },
 	effects = { { op = "ApplyStatus", status = "Focus", stacks = 2 }, { op = "Draw", count = 1 } },
+}
+
+-- Warden reward pool -----------------------------------------------------------
+
+Cards.Cleave = {
+	name = "Cleave",
+	cost = 1,
+	type = "Attack",
+	rarity = "Common",
+	class = "Warden",
+	target = "AllEnemies",
+	text = "Deal 7 damage to all enemies.",
+	effects = { { op = "Damage", amount = 7 } },
+	upgrades = {
+		A = { text = "Deal 10 damage to all enemies.", effects = { { op = "Damage", amount = 10 } } },
+		B = {
+			text = "Deal 7 damage to all enemies. Apply 1 Weak to all.",
+			effects = { { op = "Damage", amount = 7 }, { op = "ApplyStatus", status = "Weak", stacks = 1 } },
+		},
+	},
+}
+
+Cards.PommelStrike = {
+	name = "Pommel Strike",
+	cost = 1,
+	type = "Attack",
+	rarity = "Common",
+	class = "Warden",
+	target = "Enemy",
+	text = "Deal 8 damage. Draw 1 card.",
+	effects = { { op = "Damage", amount = 8 }, { op = "Draw", count = 1 } },
+	upgrades = {
+		A = { text = "Deal 11 damage. Draw 1 card.", effects = { { op = "Damage", amount = 11 }, { op = "Draw", count = 1 } } },
+		B = { text = "Deal 8 damage. Draw 2 cards.", effects = { { op = "Damage", amount = 8 }, { op = "Draw", count = 2 } } },
+	},
+}
+
+Cards.SpikedGuard = {
+	name = "Spiked Guard",
+	cost = 1,
+	type = "Skill",
+	rarity = "Common",
+	class = "Warden",
+	target = "Self",
+	text = "Gain 7 Block. Gain 1 Thorns.",
+	effects = { { op = "Block", amount = 7 }, { op = "ApplyStatus", status = "Thorns", stacks = 1 } },
+	upgrades = {
+		A = {
+			text = "Gain 10 Block. Gain 1 Thorns.",
+			effects = { { op = "Block", amount = 10 }, { op = "ApplyStatus", status = "Thorns", stacks = 1 } },
+		},
+		B = {
+			text = "Gain 7 Block. Gain 3 Thorns.",
+			effects = { { op = "Block", amount = 7 }, { op = "ApplyStatus", status = "Thorns", stacks = 3 } },
+		},
+	},
+}
+
+Cards.Taunt = {
+	name = "Taunt",
+	cost = 1,
+	type = "Skill",
+	rarity = "Common",
+	class = "Warden",
+	target = "Enemy",
+	text = "Apply 2 Weak. Gain 4 Block.",
+	effects = { { op = "ApplyStatus", status = "Weak", stacks = 2 }, { op = "Block", amount = 4 } },
+	upgrades = {
+		A = {
+			text = "Apply 3 Weak. Gain 6 Block.",
+			effects = { { op = "ApplyStatus", status = "Weak", stacks = 3 }, { op = "Block", amount = 6 } },
+		},
+		B = {
+			cost = 0,
+			text = "Apply 2 Weak. Gain 4 Block.",
+		},
+	},
+}
+
+Cards.HoldTheLine = {
+	name = "Hold the Line",
+	cost = 2,
+	type = "Skill",
+	rarity = "Common",
+	class = "Warden",
+	target = "Self",
+	text = "Gain 14 Block.",
+	effects = { { op = "Block", amount = 14 } },
+	upgrades = {
+		A = { text = "Gain 19 Block.", effects = { { op = "Block", amount = 19 } } },
+		B = {
+			text = "Gain 14 Block. Gain 1 Fortify.",
+			effects = { { op = "Block", amount = 14 }, { op = "ApplyStatus", status = "Fortify", stacks = 1 } },
+		},
+	},
+}
+
+Cards.CrushingBlow = {
+	name = "Crushing Blow",
+	cost = 2,
+	type = "Attack",
+	rarity = "Uncommon",
+	class = "Warden",
+	target = "Enemy",
+	text = "Deal 10 damage. Apply 2 Vulnerable.",
+	effects = { { op = "Damage", amount = 10 }, { op = "ApplyStatus", status = "Vulnerable", stacks = 2 } },
+	upgrades = {
+		A = {
+			text = "Deal 14 damage. Apply 2 Vulnerable.",
+			effects = { { op = "Damage", amount = 14 }, { op = "ApplyStatus", status = "Vulnerable", stacks = 2 } },
+		},
+		B = {
+			text = "Deal 10 damage. Apply 3 Vulnerable.",
+			effects = { { op = "Damage", amount = 10 }, { op = "ApplyStatus", status = "Vulnerable", stacks = 3 } },
+		},
+	},
+}
+
+Cards.Unbreakable = {
+	name = "Unbreakable",
+	cost = 2,
+	type = "Power",
+	rarity = "Rare",
+	class = "Warden",
+	target = "Self",
+	text = "Gain 2 Dexterity and 2 Thorns.",
+	effects = {
+		{ op = "ApplyStatus", status = "Dexterity", stacks = 2 },
+		{ op = "ApplyStatus", status = "Thorns", stacks = 2 },
+	},
+	upgrades = {
+		A = {
+			text = "Gain 3 Dexterity and 3 Thorns.",
+			effects = {
+				{ op = "ApplyStatus", status = "Dexterity", stacks = 3 },
+				{ op = "ApplyStatus", status = "Thorns", stacks = 3 },
+			},
+		},
+		B = { cost = 1, text = "Gain 2 Dexterity and 2 Thorns." },
+	},
+}
+
+Cards.LastStand = {
+	name = "Last Stand",
+	cost = 1,
+	type = "Skill",
+	rarity = "Rare",
+	class = "Warden",
+	target = "Self",
+	text = "Gain 10 Block. If you are below 50% HP, gain 20 instead.",
+	effects = {
+		{
+			op = "If",
+			cond = { kind = "SelfHpBelow", ratio = 0.5 },
+			["then"] = { { op = "Block", amount = 20 } },
+			["else"] = { { op = "Block", amount = 10 } },
+		},
+	},
+}
+
+Cards.Bastion = {
+	name = "Bastion",
+	cost = 3,
+	type = "Skill",
+	rarity = "Rare",
+	class = "Warden",
+	target = "Self",
+	text = "Gain 30 Block. Exhaust.",
+	keywords = { Exhaust = true },
+	effects = { { op = "Block", amount = 30 } },
+	upgrades = {
+		A = { text = "Gain 40 Block. Exhaust.", effects = { { op = "Block", amount = 40 } } },
+		B = { cost = 2, text = "Gain 30 Block. Exhaust." },
+	},
+}
+
+-- Curses (from events) ---------------------------------------------------------
+
+Cards.Doubt = {
+	name = "Doubt",
+	cost = 0,
+	type = "Curse",
+	rarity = "Special",
+	class = "Neutral",
+	target = "None",
+	text = "Unplayable. Clogs your hand.",
+	keywords = { Unplayable = true },
+	effects = {},
 }
 
 -- Junk ---------------------------------------------------------------------
