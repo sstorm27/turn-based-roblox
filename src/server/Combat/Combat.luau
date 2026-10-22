@@ -28,6 +28,9 @@
 		hero          hero class id (overrides the encounter's)
 		deck          list of card ids or { id, upgrade } (overrides)
 		heroHp        starting HP carried in from the run (defaults to max)
+		heroMaxHp     max HP carried in from the run (defaults to the class's)
+		relics        relic ids the hero carries (Data/Relics): energy, and
+		              combatStart / turnStart effects
 		qteHandler    optional synchronous QTE resolver
 		qteDifficultyBonus  added to enemy QTE difficulty (acts 2 and 3)
 		wideQteWindows      accessibility: +50% QTE windows
@@ -115,8 +118,8 @@ function Combat.new(content, config)
 		side = "Hero",
 		defId = heroId,
 		name = heroDef.name,
-		maxHp = heroDef.maxHp,
-		hp = config.heroHp or heroDef.maxHp,
+		maxHp = config.heroMaxHp or heroDef.maxHp,
+		hp = config.heroHp or config.heroMaxHp or heroDef.maxHp,
 		block = 0,
 		statuses = {},
 		freshStatuses = {},
@@ -160,8 +163,18 @@ function Combat.new(content, config)
 		table.insert(self.drawPile, self:_newCard(card.id, card.upgrade))
 	end
 
+	self.relics = {}
+	for _, relicId in config.relics or {} do
+		local relic = content.Relics[relicId]
+		assert(relic, `unknown relic {relicId}`)
+		table.insert(self.relics, relic)
+	end
+
 	self.energy = 0
 	self.maxEnergy = heroDef.energy
+	for _, relic in self.relics do
+		self.maxEnergy += relic.energy or 0
+	end
 	self.conserve = false
 	self.turn = 0
 	self.phase = "NotStarted"
@@ -574,7 +587,25 @@ function Combat:start()
 
 	self.phase = "Starting"
 	self:emit("CombatStarted", { heroId = self.hero.defId, enemies = #self.enemies })
-	self:_run(Combat._startPlayerTurn)
+	self:_run(Combat._startCombatStep)
+end
+
+function Combat:_startCombatStep()
+	self:_triggerRelics("combatStart")
+	if self:isOver() then
+		return
+	end
+	self:_startPlayerTurn()
+end
+
+function Combat:_triggerRelics(hook: string)
+	for _, relic in self.relics do
+		local effects = relic[hook]
+		if effects then
+			self:emit("RelicTriggered", { relicId = relic.id, hook = hook })
+			EffectResolver.run(self, effects, { source = self.hero, defaultTarget = "Self" })
+		end
+	end
 end
 
 function Combat:_rollIntents()
@@ -605,6 +636,10 @@ function Combat:_startPlayerTurn()
 	self.conserve = false
 	self.energy = self.maxEnergy + carry
 	self:emit("TurnStarted", { turn = self.turn, energy = self.energy })
+	self:_triggerRelics("turnStart")
+	if self:isOver() then
+		return
+	end
 	self:draw(self.heroDef.drawPerTurn)
 end
 
@@ -846,6 +881,10 @@ function Combat:getSnapshot()
 			playable = self.phase == "PlayerTurn" and (self:canPlay(card)),
 		})
 	end
+	local relicIds = {}
+	for _, relic in self.relics do
+		table.insert(relicIds, relic.id)
+	end
 	local pending = self.pendingQte
 	return {
 		turn = self.turn,
@@ -859,6 +898,7 @@ function Combat:getSnapshot()
 		discardCount = #self.discardPile,
 		exhaustCount = #self.exhaustPile,
 		powers = #self.powers,
+		relics = relicIds,
 		pendingQte = pending and {
 			qteId = pending.qteId,
 			source = pending.source,

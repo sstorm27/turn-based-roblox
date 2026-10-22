@@ -136,6 +136,11 @@ function ContentValidator.validate(content): { string }
 		checkEffects(content, hero.onPerfectDefense or {}, `Heroes.{id}.onPerfectDefense`, errors)
 	end
 
+	for id, relic in content.Relics or {} do
+		checkEffects(content, relic.combatStart or {}, `Relics.{id}.combatStart`, errors)
+		checkEffects(content, relic.turnStart or {}, `Relics.{id}.turnStart`, errors)
+	end
+
 	for id, encounter in content.Encounters do
 		for _, enemyId in encounter.enemies do
 			if not content.Enemies[enemyId] then
