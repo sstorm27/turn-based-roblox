@@ -5,7 +5,7 @@
 	the client.
 
 	Kinds (design doc, "Quick-time events")
-		Timing    tap when a shrinking ring meets the target circle
+		Timing    tap when a sweeping marker is in the gold band
 		Sequence  tap 3 to 5 arrows in the shown order
 		Mash      tap as often as possible in 1.5 s against a target count
 		Hold      hold, release inside a marked zone on a filling bar
@@ -46,7 +46,8 @@ Qte.difficultyT = d01
 
 Qte.Kinds = {
 	Timing = {
-		-- The ring shrinks onto the target at hitTime, picked in this range.
+		-- The marker reaches the centre of the gold band at hitTime, picked in
+		-- this range.
 		minHitTime = 0.6,
 		maxHitTime = 1.1,
 		tail = 0.4, -- time after hitTime before the QTE closes
