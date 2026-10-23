@@ -35,6 +35,9 @@ local function checkEffects(content, effects, where: string, errors)
 		if effect.op == "ApplyStatus" and not content.Statuses[effect.status] then
 			table.insert(errors, `{at}: unknown status {tostring(effect.status)}`)
 		end
+		if effect.op == "Detonate" and not content.Statuses[effect.status] then
+			table.insert(errors, `{at}: unknown status {tostring(effect.status)}`)
+		end
 		if effect.op == "AddCard" and not content.Cards[effect.card] then
 			table.insert(errors, `{at}: unknown card {tostring(effect.card)}`)
 		end

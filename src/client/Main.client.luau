@@ -16,6 +16,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
+local Content = require(Shared.Data.Content)
 local Remotes = require(Shared.Net.Remotes)
 
 local UI = script.Parent:WaitForChild("UI")
@@ -144,6 +145,67 @@ local function openTitleSettings()
 	Hud.assistToggles(list, hud.assist, 33)
 end
 
+-- New Run opens the class select: one panel per hero with its art,
+-- passive, QTE style and the two cards that set its starter deck apart.
+local function openClassSelect()
+	local modal = Kit.modal(modalLayer, "Choose your class", UDim2.fromOffset(940, 560))
+	local row = make("Frame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 33, Parent = modal.body }, {
+		Kit.hlist(14, Enum.HorizontalAlignment.Center, Enum.VerticalAlignment.Top),
+	})
+	local heroes = {}
+	for _, hero in Content.Heroes do
+		table.insert(heroes, hero)
+	end
+	table.sort(heroes, function(a, b)
+		return (a.order or 99) < (b.order or 99)
+	end)
+	for _, hero in heroes do
+		local panel = Kit.panel({ Size = UDim2.new(0, 290, 1, 0), BackgroundColor3 = C.panelLight, ZIndex = 33, Parent = row }, {
+			Kit.vlist(6),
+			Kit.padding(10),
+		})
+		Kit.icon(hero.id, 72, { ZIndex = 34, Parent = panel })
+		Kit.title({ Size = UDim2.new(1, 0, 0, 20), Text = string.upper(hero.name), TextColor3 = C.gold, ZIndex = 34, Parent = panel })
+		Kit.text({ Size = UDim2.new(1, 0, 0, 34), Text = hero.blurb or "", TextSize = 16, TextColor3 = C.textDim, ZIndex = 34, Parent = panel })
+		local passive = hero.passive
+		Kit.text({
+			Size = UDim2.new(1, 0, 0, 62),
+			RichText = true,
+			Text = if passive then `<b>{passive.name}:</b> {passive.text}` else "",
+			TextSize = 16,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			TextYAlignment = Enum.TextYAlignment.Top,
+			ZIndex = 34,
+			Parent = panel,
+		})
+		Kit.text({
+			Size = UDim2.new(1, 0, 0, 18),
+			Text = `{hero.maxHp} HP · QTE style: {hero.qteStyle or "Mixed"}`,
+			TextSize = 16,
+			ZIndex = 34,
+			Parent = panel,
+		})
+		-- The class cards in the starter deck (everyone shares Strike and Guard).
+		local cards = make("Frame", { Size = UDim2.new(1, 0, 0, 130), BackgroundTransparency = 1, ZIndex = 34, Parent = panel }, {
+			Kit.hlist(8),
+		})
+		local seen = {}
+		for _, cardId in hero.starterDeck do
+			local def = Content.Cards[cardId]
+			if def.class == hero.id and not seen[cardId] then
+				seen[cardId] = true
+				local card = Kit.card(def, { ZIndex = 34, Parent = cards }, nil, { scale = 0.76 })
+				Kit.tooltip(card, `<b>{def.name}</b>\n{def.text}`)
+			end
+		end
+		Kit.button({ Size = UDim2.new(1, 0, 0, 40), Text = `Play {hero.name}`, ZIndex = 34, Parent = panel }, function()
+			modal.close()
+			Remotes.StartRun:FireServer(hero.id)
+			awaitingRun = true
+		end, { color = C.buttonGo, textSize = 12 })
+	end
+end
+
 local function drawMenu()
 	Kit.clear(menu)
 	local canContinue = run ~= nil and not run.over
@@ -153,10 +215,10 @@ local function drawMenu()
 			showRun(run)
 		end, { color = C.buttonGo, textSize = 16 })
 	end
-	Kit.button({ Size = UDim2.new(1, 0, 0, 52), Text = "New Run", ZIndex = 21, Parent = menu }, function()
-		Remotes.StartRun:FireServer()
-		awaitingRun = true
-	end, { color = if canContinue then C.button else C.buttonGo, textSize = 16 })
+	Kit.button({ Size = UDim2.new(1, 0, 0, 52), Text = "New Run", ZIndex = 21, Parent = menu }, openClassSelect, {
+		color = if canContinue then C.button else C.buttonGo,
+		textSize = 16,
+	})
 	Kit.button({ Size = UDim2.new(1, 0, 0, 44), Text = "Practice fight", ZIndex = 21, Parent = menu }, function()
 		Remotes.StartCombat:FireServer("Prototype")
 	end, { textSize = 12 })
