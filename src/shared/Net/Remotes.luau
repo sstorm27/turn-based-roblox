@@ -3,7 +3,8 @@
 	for them.
 
 	Client to server
-		StartRun     ()                       starts a new run (replaces any other)
+		StartRun     (heroId?)                starts a new run as that class
+		                                      (replaces any other; default Warden)
 		ChooseNode   (nodeId)                 a path card on the map
 		ChooseOption (action)                 { kind = "Option", index } events,
 		                                      rest, rewards, boss relics;

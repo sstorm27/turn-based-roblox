@@ -17,10 +17,16 @@
 		ModifyDamageTaken(stacks, value, ctx) -> value
 		ModifyBlockGained(stacks, value, ctx) -> value
 		ModifyQteWindow(stacks, value, ctx)   -> value   (window multiplier)
+		ModifyAttackerQteWindow(stacks, value, ctx) -> value  (the hero's
+		                  defensive window against this unit's attacks)
 		OnTurnStart(ctx), OnTurnEnd(ctx), OnRoundEnd(ctx)
 		OnHit(ctx)        ctx.attacker is the unit that hit the owner
 		OnApplied(ctx)    ctx.added is the number of stacks just added
 		OnQteGraded(ctx)  ctx.grade, ctx.request
+
+	kind (Buff, Debuff, DoT, Control) is what class rules count: Catalyst
+	counts DoTs, Malice counts Debuffs, Siphon steals Buffs and Transfer moves
+	Debuffs.
 
 	ctx always has: combat, owner (the unit), stacks, statusId.
 ]]
@@ -122,7 +128,7 @@ Statuses.Poison = {
 	priority = 60,
 	text = "Lose 1 HP per stack at turn start, ignoring Block. Then -1 stack.",
 	OnTurnStart = function(ctx)
-		ctx.combat:loseHp(ctx.owner, ctx.stacks)
+		ctx.combat:dotDamage(ctx.owner, ctx.stacks, true)
 		ctx.combat:addStatus(ctx.owner, "Poison", -1)
 	end,
 }
@@ -134,7 +140,7 @@ Statuses.Bleed = {
 	priority = 60,
 	text = "Lose 1 HP per stack each time it is hit by an attack.",
 	OnHit = function(ctx)
-		ctx.combat:loseHp(ctx.owner, ctx.stacks)
+		ctx.combat:dotDamage(ctx.owner, ctx.stacks, true)
 	end,
 }
 
@@ -145,7 +151,7 @@ Statuses.Burn = {
 	priority = 60,
 	text = "Take 1 damage per stack at turn end (hits Block). Then removed.",
 	OnTurnEnd = function(ctx)
-		ctx.combat:applyDamage(ctx.owner, ctx.stacks, { isAttack = false })
+		ctx.combat:dotDamage(ctx.owner, ctx.stacks, false)
 		ctx.combat:removeStatus(ctx.owner, "Burn")
 	end,
 }
@@ -176,9 +182,40 @@ Statuses.Dazed = {
 	kind = "Debuff",
 	decay = "Round",
 	priority = 80,
-	text = "QTE windows are 20% narrower per stack.",
+	text = "On you: QTE windows are 20% narrower per stack. On an enemy: your QTEs against its attacks are 20% wider per stack.",
 	ModifyQteWindow = function(stacks, value)
 		return value - 0.2 * stacks
+	end,
+	ModifyAttackerQteWindow = function(stacks, value)
+		return value + 0.2 * stacks
+	end,
+}
+
+-- Class powers (a Power card applies one to the hero) ---------------------------
+
+Statuses.Miasma = {
+	name = "Miasma",
+	kind = "Buff",
+	decay = "Permanent",
+	priority = 90,
+	text = "At the start of your turn, apply 1 Poison to all enemies per stack.",
+	OnTurnStart = function(ctx)
+		for _, enemy in ctx.combat:opponentsOf(ctx.owner) do
+			ctx.combat:applyStatus(enemy, "Poison", ctx.stacks, ctx.owner)
+		end
+	end,
+}
+
+Statuses.Gloom = {
+	name = "Gloom",
+	kind = "Buff",
+	decay = "Permanent",
+	priority = 90,
+	text = "At the start of your turn, apply 1 Vulnerable to all enemies per stack.",
+	OnTurnStart = function(ctx)
+		for _, enemy in ctx.combat:opponentsOf(ctx.owner) do
+			ctx.combat:applyStatus(enemy, "Vulnerable", ctx.stacks, ctx.owner)
+		end
 	end,
 }
 

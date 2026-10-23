@@ -4,9 +4,10 @@ local RunValidator = require("../src/server/Run/RunValidator")
 local TestKit = require("./TestKit")
 local expect = TestKit.expect
 
-local function newRun(seed: number?)
+local function newRun(seed: number?, hero: string?)
 	return Run.new(Content, {
 		seed = seed or 11,
+		hero = hero,
 		qteHandler = function()
 			return "Perfect"
 		end,
@@ -562,5 +563,22 @@ return function(t)
 			expect.truthy(run.stats.rows >= 1, "climbed")
 		end
 		expect.equal(endings.Won + endings.Lost, 15)
+	end)
+
+	t.test("the bot plays whole runs as the Alchemist and the Hexxer too", function()
+		for _, hero in { "Alchemist", "Hexxer" } do
+			for seed = 1, 8 do
+				local run = newRun(seed, hero)
+				expect.equal(run.heroId, hero)
+				local steps = 0
+				while not run.over do
+					steps += 1
+					assert(steps < 3000, `{hero} run {seed} stuck on {run.screen.kind}`)
+					local ok, err = botStep(run)
+					assert(ok ~= false, `{hero} run {seed}: {err} on {run.screen.kind}`)
+				end
+				expect.truthy(run.stats.rows >= 1, "climbed")
+			end
+		end
 	end)
 end

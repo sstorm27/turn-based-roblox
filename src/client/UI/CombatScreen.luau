@@ -819,6 +819,19 @@ function CombatScreen:_playEvent(event)
 		if sprite and def then
 			Kit.pop(sprite, `{def.name} {event.stacks}`, statusColor(event.status), { size = 10, rise = 30 })
 		end
+	elseif t == "Detonated" then
+		local sprite = self:_unitSprite(event.targetId)
+		local def = Content.Statuses[event.status]
+		if sprite and def then
+			Kit.pop(sprite, `{string.upper(def.name)} BURST!`, C.energy, { size = 12, rise = 36 })
+		end
+	elseif t == "Siphoned" or t == "Transferred" then
+		local sprite = self:_unitSprite(event.targetId)
+		local def = Content.Statuses[event.status]
+		if sprite and def then
+			local word = if t == "Siphoned" then "STOLEN" else "CURSED"
+			Kit.pop(sprite, `{def.name} {word}`, statusColor(event.status), { size = 10, rise = 36 })
+		end
 	elseif t == "EnemyMove" then
 		local sprite = self:_unitSprite(event.unitId)
 		if sprite then

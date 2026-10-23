@@ -9,7 +9,7 @@ This repo holds the **combat engine** and the **run layer** on top of it: server
 1. Install [Rokit](https://github.com/rojo-rbx/rokit), then run `rokit install` in this folder to get Rojo.
 2. Install the Rojo plugin in Roblox Studio (`rojo plugin install`).
 3. Run `rojo serve`, open a place in Studio and click **Connect** in the Rojo plugin.
-4. Press Play. Click **New Run** to play act 1 from the map, or **Practice fight** for a single fight (the Warden vs a Cultist).
+4. Press Play. Click **New Run**, pick a class (Warden, Alchemist or Hexxer), and play act 1 from the map, or **Practice fight** for a single fight (the Warden vs a Cultist).
 
 Controls: tap a card to lift it, then tap it again to play it, or tap an enemy to play it on that enemy. End Turn is bottom right. Hover (or long-press on touch) a card, status, intent or relic for a tooltip. During a QTE, tap or click anywhere or press Space. Sequence QTEs also take the arrow keys or WASD, and for Trace you hold and drag through the dots in order. QTE assists (wider windows, always Good) are under Settings.
 
@@ -31,14 +31,24 @@ The engine modules have no Roblox instances in them and take `Content` as an arg
 
 ## How combat works
 
-- **Turn flow:** player turn (energy 3, draw 5, play cards), then each enemy acts on its shown intent, then statuses decay, and the next round starts. The Warden keeps 25% of unspent Block.
-- **Cards** are data: `cost`, `type`, `target` and an ordered `effects` list built from a fixed set of ops (`Damage`, `Block`, `ApplyStatus`, `Draw`, `GainEnergy`, `AddCard`, `Exhaust`, `Heal`, `Repeat`, `If`). Each card has A/B upgrade paths.
-- **Statuses** (Strength, Dexterity, Fortify, Thorns, Regen, Vulnerable, Weak, Frail, Poison, Bleed, Burn, Stun, Focus, Dazed) are stacks with a decay rule and hooks that run in a fixed priority order.
+- **Turn flow:** player turn (energy 3, draw 5, play cards), then each enemy acts on its shown intent, then statuses decay, and the next round starts. Class passives are under [Classes](#classes).
+- **Cards** are data: `cost`, `type`, `target` and an ordered `effects` list built from a fixed set of ops (`Damage`, `Block`, `ApplyStatus`, `Draw`, `GainEnergy`, `AddCard`, `Exhaust`, `Heal`, `Repeat`, `If`, and the class ops `Detonate`, `Siphon` and `Transfer`). Each card has A/B upgrade paths.
+- **Statuses** (Strength, Dexterity, Fortify, Thorns, Regen, Vulnerable, Weak, Frail, Poison, Bleed, Burn, Stun, Focus, Dazed, and the power statuses Miasma and Gloom) are stacks with a decay rule and hooks that run in a fixed priority order. Dazed on an enemy widens your defensive QTEs against its attacks.
 - **Enemies** pick moves from a Cycle, Weighted or Conditional pattern and always show their intent, with the damage number already including Strength, Weak and Vulnerable.
+
+## Classes
+
+Pick one at **New Run**. All three share 70 HP, 3 energy, 5 cards a turn and 4 Strike + 4 Guard in the starter deck; the class sets the other two starter cards, the reward pool, a passive and a QTE style. The design doc unlocks the Alchemist and Hexxer with Renown; for now all three are open. Classes live in `Data/Heroes`, and a card joins a class's pool through its `class` field.
+
+| Class | Passive | Starter cards | Plays with |
+| --- | --- | --- | --- |
+| Warden | Steadfast: keep 25% of unspent Block | Shield Bash, Brace | Block, Fortify, Thorns; Hold and Timing QTEs; a Perfect parry gives 3 Block |
+| Alchemist | Catalyst: an enemy with 2+ different DoTs takes 25% more DoT damage (ticks and Detonate) | Toxic Flask, Volatile Mix | Poison, Burn, Bleed; **Detonate** cards consume a DoT's stacks for instant damage; Sequence QTEs; a Perfect parry poisons the attacker |
+| Hexxer | Malice: debuffs you apply last 1 extra round; an enemy with 3+ different debuffs takes 25% more attack damage | Evil Eye, Siphon | Weak, Vulnerable, Frail, Dazed, Strength; **Siphon** steals an enemy buff, **Transfer** moves your debuffs onto an enemy; Trace QTEs; a Perfect parry weakens the attacker |
 
 ## How a run works
 
-- **One life, no hub.** A run starts on the act 1 map with the Warden's starter deck, 70 HP and 99 gold. HP carries between fights, and losing a fight (or dying to an event) ends the run. Beating the last act's boss wins it. The MVP ships one act; `Data/Acts` holds a list, so more acts are data.
+- **One life, no hub.** A run starts on the act 1 map with the chosen class's starter deck, 70 HP and 99 gold. HP carries between fights, and losing a fight (or dying to an event) ends the run. Beating the last act's boss wins it. The MVP ships one act; `Data/Acts` holds a list, so more acts are data.
 - **Map.** Each act is a seeded 7 x 15 graph: 6 paths drawn upward that never cross, merged where they meet, then widened so about 4 in 5 steps offer a choice. Row 1 is always a fight, row 8 Treasure, row 14 Rest and row 15 the boss. Other rows roll Combat 45, Event 22, Rest 12, Elite 8 and Shop 5, with no Elite or Rest before row 5, no Elite, Rest or Shop twice in a row on a path, and siblings preferring different types.
 - **Presentation.** The player never has to read the graph. The run snapshot gives an act progress bar (row 6 of 15, with the Treasure, Rest and Boss stops) and 2 or 3 path cards, each with a type, a one-line hint and what it leads to. The full graph is in the snapshot too, for a "View full map" button.
 - **Nodes.** Combat pays 10 to 20 gold and a pick of 3 cards (or skip). Elites pay 25 to 35 gold, better rare odds and a relic. The boss fully heals you, offers 3 rare cards and 1 of 3 boss relics. Rest heals 30%, upgrades a card on path A or B, or removes a card (once per act). Shops sell 5 cards (one on sale), 3 relics, a removal (75, then +25 each) and an upgrade (100). Treasure is a relic.
@@ -51,7 +61,7 @@ The engine modules have no Roblox instances in them and take `Content` as an arg
 The five kinds are Timing, Sequence, Mash, Hold and Trace, and each is graded Miss, Good or Perfect.
 
 - **Cards:** a card with a `qte` field plays a QTE after you pick the target and before its effects resolve. `qte.good` and `qte.perfect` hold bonus effects. A bonus `Damage` or `Block` adds to the card's matching effect, so it means "+4 damage", and any other bonus effect is added on. A Miss plays the printed card.
-- **Enemy attacks:** a move with a `defenseQte` field gives the hero a QTE before each hit. Good takes 50% damage and Perfect avoids it, and the Warden also gains 3 Block on a Perfect. Multi-hit moves get one QTE per hit with narrower windows. Debuffs from the move still apply.
+- **Enemy attacks:** a move with a `defenseQte` field gives the hero a QTE before each hit. Good takes 50% damage and Perfect avoids it, and a Perfect also triggers the class hook (the Warden gains 3 Block, the Alchemist poisons the attacker, the Hexxer weakens it). Multi-hit moves get one QTE per hit with narrower windows. Debuffs from the move still apply.
 - **Server owns it:** the engine pauses in the `AwaitingQte` phase. The server sends `QteStart` (`qteId`, `kind`, `difficulty`, `params`, `deadline`), the client returns `QteResult` with raw input times, and `QteJudge` grades them. A late, missing or impossible result (a first input under 80 ms) is a Miss.
 - **Tuning** lives in `src/shared/Data/Qte.luau`: windows by difficulty 1 to 5, Focus and Dazed (±20% window per stack), the act difficulty bonus and the accessibility options (wider windows, or "always Good").
 
