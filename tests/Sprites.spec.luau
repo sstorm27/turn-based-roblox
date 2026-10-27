@@ -7,7 +7,7 @@ return function(t)
 	t.test("every sprite is a square grid of palette colours", function()
 		for name, rows in Sprites.art do
 			local width = #rows[1]
-			expect.truthy(width == 12 or width == 16, `{name} is {width} wide`)
+			expect.truthy(width == 16 or width == 32, `{name} is {width} wide`)
 			expect.equal(#rows, width, `{name} is not square`)
 			for _, row in rows do
 				expect.equal(#row, width, `{name} has a row of {#row}`)

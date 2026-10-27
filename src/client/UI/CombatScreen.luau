@@ -123,8 +123,8 @@ local function newUnit(parent: Instance, isHero: boolean, onClick: () -> ()): Un
 		stroke.Color = C.gold
 		widget.intent = intent
 		local intentText = Kit.title({
-			Position = UDim2.fromOffset(34, 0),
-			Size = UDim2.new(1, -38, 1, 0),
+			Position = UDim2.fromOffset(36, 0),
+			Size = UDim2.new(1, -40, 1, 0),
 			TextScaled = true,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			Parent = intent,
@@ -162,7 +162,7 @@ local function newUnit(parent: Instance, isHero: boolean, onClick: () -> ()): Un
 	local sprite = make("TextButton", {
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.fromOffset(UNIT_WIDTH / 2, 60),
-		Size = UDim2.fromOffset(110, 110),
+		Size = UDim2.fromOffset(110, 116),
 		BackgroundColor3 = if isHero then Color3.fromRGB(58, 84, 120) else Color3.fromRGB(96, 52, 62),
 		AutoButtonColor = false,
 		Text = "",
@@ -247,11 +247,11 @@ local function updateUnit(widget: UnitWidget, unit, intent)
 			widget.art:Destroy()
 			widget.art = nil
 		end
-		-- 16x16 sprites at 5x, above the name strip.
+		-- 32x32 sprites at 3x, above the name strip.
 		if unit.defId and Kit.hasArt(unit.defId) then
-			widget.art = Kit.icon(unit.defId, 80, {
+			widget.art = Kit.icon(unit.defId, 96, {
 				AnchorPoint = Vector2.new(0.5, 0),
-				Position = UDim2.new(0.5, 0, 0, 6),
+				Position = UDim2.fromScale(0.5, 0),
 				Parent = widget.sprite,
 			})
 		end
@@ -287,7 +287,7 @@ local function updateUnit(widget: UnitWidget, unit, intent)
 				if widget.intentIcon then
 					widget.intentIcon:Destroy()
 				end
-				widget.intentIcon = Kit.icon(intent.type, 24, { Position = UDim2.fromOffset(7, 5), Parent = intentFrame })
+				widget.intentIcon = Kit.icon(intent.type, 32, { Position = UDim2.fromOffset(2, 1), Parent = intentFrame })
 			end
 			label.Text = intentLabel(intent)
 			qteTag.Visible = intent.defenseQte ~= nil
@@ -325,8 +325,8 @@ local function updateUnit(widget: UnitWidget, unit, intent)
 			})
 			if hasArt then
 				local pad = chip:FindFirstChildOfClass("UIPadding") :: UIPadding
-				pad.PaddingLeft = UDim.new(0, 26)
-				Kit.icon(id, 24, { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, -26, 0.5, 0), Parent = chip })
+				pad.PaddingLeft = UDim.new(0, 22)
+				Kit.icon(id, 16, { AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, -19, 0.5, 0), Parent = chip })
 			end
 			Kit.tooltip(chip, statusTooltip(id, stacks))
 		end
@@ -427,7 +427,7 @@ function CombatScreen.new(parent: Instance, callbacks: { onQteGraded: (qteId: st
 			Active = true,
 			Parent = bottom,
 		}, { Kit.hlist(6) })
-		Kit.icon(iconName, 24, { Parent = chip })
+		Kit.icon(iconName, 32, { Parent = chip })
 		local count = Kit.title({ Size = UDim2.fromOffset(30, 20), TextSize = 12, Parent = chip })
 		Kit.tooltip(chip, tip)
 		return count, chip
