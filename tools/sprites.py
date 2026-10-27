@@ -279,6 +279,24 @@ def buckle():
     c.line("prong", "E", 4, 8, 11, 8, width=1)
     return c.render()
 
+
+def miasma():
+    c = C()
+    c.ellipse("c", "n", 5, 9, 4, 3.5).ellipse("c", "n", 10, 7, 4.5, 4.5).ellipse("c", "n", 12, 10, 3, 2.5)
+    c.rect("c", "n", 4, 9, 13, 12)
+    c.px("h", (6, 9), (7, 9), (9, 9), (10, 9), (8, 11))
+    c.line("drip", "m", 4, 13, 4, 15).line("drip2", "m", 11, 13, 11, 15)
+    return c.render()
+
+
+def gloom():
+    c = C()
+    c.ellipse("e", "p", 8, 8, 7.5, 4.5)
+    c.ellipse("i", "r", 8, 8, 3, 3)
+    c.px("k", (7, 7), (8, 7), (7, 8), (8, 8)).px("y", (9, 6))
+    return c.render()
+
+
 ICONS = {
     "hp": heart().render(),
     "block": shield().render(),
@@ -322,6 +340,8 @@ ICONS = {
     "Stun": star("y"),
     "Focus": eye(),
     "Dazed": star("l"),
+    "Miasma": miasma(),
+    "Gloom": gloom(),
     "IronBuckle": buckle(),
     "VigorFlask": flask(),
     "FocusLens": lens(),
@@ -501,8 +521,49 @@ def hollow_king():
     c.px("r", (16, 3))
     return c.render()
 
+
+def alchemist():
+    c = Canvas(32, 32)
+    c.rect("legL", "B", 11, 25, 14, 30)
+    c.rect("legR", "B", 17, 25, 20, 30)
+    c.poly("coat", "b", [(9, 17), (23, 17), (25, 29), (7, 29)])
+    c.rect("apron", "w", 13, 19, 19, 28)
+    c.line("neck", "l", 27, 13, 27, 16, width=2)
+    c.ellipse("potion", "n", 27.5, 20, 4, 4)
+    c.ellipse("hand", "s", 24.5, 22, 2, 2)
+    c.ellipse("head", "s", 16, 12, 8, 7.5)
+    c.ellipse("hair", "B", 16, 6.5, 8.5, 4)
+    c.rect("strap", "B", 8, 9, 24, 10)
+    c.ellipse("lensL", "y", 13, 9.5, 2.5, 2.5)
+    c.ellipse("lensR", "y", 19, 9.5, 2.5, 2.5)
+    c.px("c", (13, 9), (19, 9))
+    c.px("k", (13, 14), (14, 14), (19, 14), (20, 14))
+    c.hline("k", 15, 18, 17)
+    c.px("i", (26, 18), (25, 19))
+    c.px("m", (29, 13), (30, 11), (28, 10))
+    return c.render()
+
+
+def hexxer():
+    c = Canvas(32, 32)
+    c.line("wand", "P", 27, 8, 25, 22, width=2)
+    c.ellipse("orb", "p", 27.5, 6.5, 2.5, 2.5)
+    c.poly("robe", "N", [(16, 12), (26, 29), (6, 29)])
+    c.ellipse("hood", "N", 16, 13, 8, 7.5)
+    c.poly("tip", "N", [(11, 8), (21, 8), (17, -1)])
+    c.ellipse("face", "s", 16, 15, 5, 4.5)
+    c.ellipse("hand", "s", 24.5, 22, 2, 2)
+    c.rect("sash", "y", 11, 22, 21, 23)
+    c.px("k", (14, 15), (18, 15)).px("p", (14, 14), (18, 14))
+    c.hline("k", 15, 17, 18)
+    c.px("v", (27, 3), (30, 6), (24, 5))
+    return c.render()
+
+
 UNITS = {
     "Warden": warden(),
+    "Alchemist": alchemist(),
+    "Hexxer": hexxer(),
     "Cultist": cultist(),
     "AcidSlime": slime(),
     "Bandit": bandit(),
