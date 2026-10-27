@@ -458,9 +458,9 @@ function Kit.card(card: any, props: { [string]: any }?, onClick: (() -> ())?, op
 	})
 	local typeIcon = `{card.type}Card`
 	if Kit.hasArt(typeIcon) then
-		Kit.icon(typeIcon, math.floor(12 * scale), {
+		Kit.icon(typeIcon, math.floor(16 * scale), {
 			AnchorPoint = Vector2.new(1, 0),
-			Position = UDim2.new(1, -3, 0, 3),
+			Position = UDim2.new(1, -2, 0, 1),
 			TextTransparency = if enabled then 0 else 0.5,
 			ZIndex = z + 1,
 			Parent = face,

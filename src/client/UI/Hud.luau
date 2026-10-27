@@ -53,11 +53,11 @@ function Hud.new(parent: Instance, modalLayer: Instance, callbacks: { onMainMenu
 	}, { Kit.hlist(14, Enum.HorizontalAlignment.Left) })
 
 	self.heroName = Kit.title({ AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 20), TextSize = 12, ZIndex = 11, Parent = left })
-	local hp = make("Frame", { Size = UDim2.fromOffset(150, 24), BackgroundTransparency = 1, ZIndex = 11, Parent = left }, { Kit.hlist(6, Enum.HorizontalAlignment.Left) })
-	Kit.icon("hp", 24, { ZIndex = 11, Parent = hp })
+	local hp = make("Frame", { Size = UDim2.fromOffset(158, 24), BackgroundTransparency = 1, ZIndex = 11, Parent = left }, { Kit.hlist(6, Enum.HorizontalAlignment.Left) })
+	Kit.icon("hp", 32, { ZIndex = 11, Parent = hp })
 	self.hpBar = Kit.bar({ Size = UDim2.fromOffset(120, 16), ZIndex = 11, Parent = hp }, C.hp)
-	local gold = make("Frame", { Size = UDim2.fromOffset(86, 24), BackgroundTransparency = 1, ZIndex = 11, Active = true, Parent = left }, { Kit.hlist(6, Enum.HorizontalAlignment.Left) })
-	Kit.icon("gold", 24, { ZIndex = 11, Parent = gold })
+	local gold = make("Frame", { Size = UDim2.fromOffset(94, 24), BackgroundTransparency = 1, ZIndex = 11, Active = true, Parent = left }, { Kit.hlist(6, Enum.HorizontalAlignment.Left) })
+	Kit.icon("gold", 32, { ZIndex = 11, Parent = gold })
 	self.goldText = Kit.title({ Size = UDim2.fromOffset(56, 20), TextSize = 12, TextColor3 = C.gold, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 11, Parent = gold })
 	Kit.tooltip(gold, "<b>Gold</b>\nSpend it in shops.")
 	self.floorText = Kit.text({ AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 20), TextSize = 18, TextColor3 = C.textDim, ZIndex = 11, Parent = left })
@@ -72,7 +72,7 @@ function Hud.new(parent: Instance, modalLayer: Instance, callbacks: { onMainMenu
 	}, { Kit.hlist(8, Enum.HorizontalAlignment.Right) })
 	self.relicRow = make("Frame", {
 		AutomaticSize = Enum.AutomaticSize.X,
-		Size = UDim2.fromOffset(0, 30),
+		Size = UDim2.fromOffset(0, 38),
 		BackgroundTransparency = 1,
 		ZIndex = 10,
 		Parent = right,
@@ -104,14 +104,14 @@ function Hud:setRun(run)
 	Kit.clear(self.relicRow)
 	for _, relic in run.relics do
 		local tile = make("Frame", {
-			Size = UDim2.fromOffset(28, 28),
+			Size = UDim2.fromOffset(36, 36),
 			BackgroundColor3 = C.panel,
 			Active = true,
 			ZIndex = 11,
 			Parent = self.relicRow,
 		})
 		Kit.outline(Theme.rarityColors[relic.rarity] or C.gold, 2).Parent = tile
-		Kit.icon(relic.id, 24, {
+		Kit.icon(relic.id, 32, {
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = UDim2.fromScale(0.5, 0.5),
 			TextColor3 = Theme.rarityColors[relic.rarity] or C.gold,
