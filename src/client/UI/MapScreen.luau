@@ -40,7 +40,8 @@ local function nodeTile(parent: Instance, nodeType: string, size: number, props:
 	p.Parent = parent
 	local tile = make("Frame", p)
 	Kit.outline(C.ink, 2).Parent = tile
-	Kit.icon(nodeType, math.floor(size * 0.65), {
+	-- A multiple of the 16 px sprite, so its pixels stay even.
+	Kit.icon(nodeType, math.max(16, math.floor(size * 0.7 / 16) * 16), {
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
 		ZIndex = tile.ZIndex + 1,
@@ -334,7 +335,7 @@ function MapScreen:openFullMap()
 			Parent = canvas,
 		})
 		Kit.outline(if isCurrent or canPick then C.goldLight else C.ink, if isCurrent or canPick then 3 else 2).Parent = tile
-		Kit.icon(node.type, 24, {
+		Kit.icon(node.type, 32, {
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = UDim2.fromScale(0.5, 0.5),
 			TextTransparency = if node.visited and not isCurrent then 0.5 else 0,
