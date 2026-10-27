@@ -43,8 +43,8 @@ Pick one at **New Run**. All three share 70 HP, 3 energy, 5 cards a turn and 4 S
 | Class | Passive | Starter cards | Plays with |
 | --- | --- | --- | --- |
 | Warden | Steadfast: keep 25% of unspent Block | Shield Bash, Brace | Block, Fortify, Thorns; Hold and Timing QTEs; a Perfect parry gives 3 Block |
-| Alchemist | Catalyst: an enemy with 2+ different DoTs takes 25% more DoT damage (ticks and Detonate) | Toxic Flask, Volatile Mix | Poison, Burn, Bleed; **Detonate** cards consume a DoT's stacks for instant damage; Sequence QTEs; a Perfect parry poisons the attacker |
-| Hexxer | Malice: debuffs you apply last 1 extra round; an enemy with 3+ different debuffs takes 25% more attack damage | Evil Eye, Siphon | Weak, Vulnerable, Frail, Dazed, Strength; **Siphon** steals an enemy buff, **Transfer** moves your debuffs onto an enemy; Trace QTEs; a Perfect parry weakens the attacker |
+| Alchemist | Catalyst: an enemy with 2+ different DoTs takes 25% more DoT damage (ticks and Detonate, rounded to nearest) | Toxic Flask, Volatile Mix | Poison, Burn, Bleed; **Detonate** cards consume a DoT's stacks for instant damage; Sequence QTEs; a Perfect parry poisons the attacker |
+| Hexxer | Malice: debuffs you apply last 1 extra round; an enemy with 3+ different debuffs takes 25% more attack damage | Evil Eye, Siphon | Weak, Vulnerable, Frail, Dazed, Strength; **Siphon** steals an enemy buff, **Transfer** moves your debuffs, Poison, Bleed and Burn onto an enemy; Trace QTEs; a Perfect parry weakens the attacker |
 
 ## How a run works
 

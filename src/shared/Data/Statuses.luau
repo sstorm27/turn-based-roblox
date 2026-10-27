@@ -26,7 +26,7 @@
 
 	kind (Buff, Debuff, DoT, Control) is what class rules count: Catalyst
 	counts DoTs, Malice counts Debuffs, Siphon steals Buffs and Transfer moves
-	Debuffs.
+	Debuffs and DoTs.
 
 	ctx always has: combat, owner (the unit), stacks, statusId.
 ]]

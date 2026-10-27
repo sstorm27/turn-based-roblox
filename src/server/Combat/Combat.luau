@@ -389,10 +389,16 @@ function Combat:loseHp(target, amount: number)
 	self:_checkDeath(target)
 end
 
+-- DoT damage after the Alchemist's Catalyst, rounded to the nearest whole
+-- number (Poison 2 with Catalyst deals 3, not 2).
+function Combat:_catalyst(target, amount: number): number
+	return math.floor(amount * self:_passiveMult(target, self.heroDef.dotAmp) + 0.5)
+end
+
 -- Damage from a DoT status (Poison and Bleed ignore Block, Burn hits it),
 -- raised by the Alchemist's Catalyst.
 function Combat:dotDamage(target, amount: number, ignoreBlock: boolean)
-	amount = math.floor(amount * self:_passiveMult(target, self.heroDef.dotAmp) + 1e-9)
+	amount = self:_catalyst(target, amount)
 	if ignoreBlock then
 		self:loseHp(target, amount)
 	else
@@ -407,7 +413,7 @@ function Combat:detonate(source, target, statusId: string, mult: number)
 	if not target.alive or stacks <= 0 then
 		return
 	end
-	local amount = math.floor(stacks * mult * self:_passiveMult(target, self.heroDef.dotAmp) + 1e-9)
+	local amount = self:_catalyst(target, stacks * mult)
 	self:removeStatus(target, statusId)
 	self:emit("Detonated", { targetId = target.id, sourceId = source.id, status = statusId, stacks = stacks })
 	self:applyDamage(target, amount, { source = source, isAttack = false })
@@ -437,13 +443,14 @@ function Combat:siphon(source, target, count: number)
 	end
 end
 
--- Moves every debuff on `source` onto `target` (Transfer cards).
+-- Moves every debuff and DoT on `source` onto `target` (Transfer cards).
 function Combat:transferDebuffs(source, target)
 	if not target.alive then
 		return
 	end
 	for _, id in StatusSystem.sortedIds(self.content, source) do
-		if self.content.Statuses[id].kind == "Debuff" then
+		local kind = self.content.Statuses[id].kind
+		if kind == "Debuff" or kind == "DoT" then
 			local stacks = source.statuses[id]
 			self:removeStatus(source, id)
 			self:emit("Transferred", { targetId = target.id, sourceId = source.id, status = id, stacks = stacks })

@@ -450,15 +450,15 @@ Cards.VolatileMix = {
 	rarity = "Starter",
 	class = "Alchemist",
 	target = "Enemy",
-	text = "Detonate Burn: consume all Burn on an enemy, deal 2x its stacks. If it has none, apply 3 Burn first.",
+	text = "No Burn on the enemy? Apply 3 first. Detonate Burn: deal 2x its stacks.",
 	effects = volatileMix(3, 2),
 	upgrades = {
 		A = {
-			text = "Detonate Burn: consume all Burn on an enemy, deal 3x its stacks. If it has none, apply 3 Burn first.",
+			text = "No Burn on the enemy? Apply 3 first. Detonate Burn: deal 3x its stacks.",
 			effects = volatileMix(3, 3),
 		},
 		B = {
-			text = "Detonate Burn: consume all Burn on an enemy, deal 2x its stacks. If it has none, apply 5 Burn first.",
+			text = "No Burn on the enemy? Apply 5 first. Detonate Burn: deal 2x its stacks.",
 			effects = volatileMix(5, 2),
 		},
 	},
@@ -933,14 +933,14 @@ Cards.MirrorCurse = {
 	rarity = "Uncommon",
 	class = "Hexxer",
 	target = "Enemy",
-	text = "Transfer: move all your debuffs onto an enemy. Gain 6 Block.",
+	text = "Transfer: move all your debuffs, Poison, Bleed and Burn onto an enemy. Gain 6 Block.",
 	effects = { { op = "Transfer" }, { op = "Block", amount = 6 } },
 	upgrades = {
 		A = {
-			text = "Transfer: move all your debuffs onto an enemy. Gain 9 Block.",
+			text = "Transfer: move all your debuffs, Poison, Bleed and Burn onto an enemy. Gain 9 Block.",
 			effects = { { op = "Transfer" }, { op = "Block", amount = 9 } },
 		},
-		B = { cost = 0, text = "Transfer: move all your debuffs onto an enemy. Gain 6 Block." },
+		B = { cost = 0, text = "Transfer: move all your debuffs, Poison, Bleed and Burn onto an enemy. Gain 6 Block." },
 	},
 }
 

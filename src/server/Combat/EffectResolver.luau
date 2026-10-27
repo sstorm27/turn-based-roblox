@@ -12,7 +12,7 @@
 		moveId         the enemy move being performed
 
 	Class ops: Detonate (consume a DoT for damage), Siphon (steal buffs) and
-	Transfer (move your debuffs onto the target).
+	Transfer (move your debuffs, Poison, Bleed and Burn onto the target).
 
 	Targets are relative to the source: "Self", "Target", "Hero",
 	"AllEnemies" (the source's opponents), "RandomEnemy", "AllAllies".
@@ -129,7 +129,7 @@ function ops.Siphon(combat, effect, ctx)
 	end
 end
 
--- Moves all of the source's debuffs onto the target.
+-- Moves all of the source's debuffs and DoTs onto the target.
 function ops.Transfer(combat, effect, ctx)
 	for _, unit in EffectResolver.resolveTargets(combat, effect, ctx) do
 		combat:transferDebuffs(ctx.source, unit)

@@ -82,6 +82,12 @@ return function(t)
 		enemyTurnStart(combat, enemy)
 		expect.equal(hp - enemy.hp, 5, "Poison 4 x1.25")
 
+		enemy.statuses.Poison = 2
+		enemy.statuses.Bleed = 1
+		hp = enemy.hp
+		enemyTurnStart(combat, enemy)
+		expect.equal(hp - enemy.hp, 3, "Poison 2 x1.25 = 2.5, rounded to nearest")
+
 		-- Only the Alchemist has Catalyst.
 		local warden = newCombat("Warden", { "Guard" })
 		local other = warden.enemies[1]
@@ -101,7 +107,7 @@ return function(t)
 		-- No Burn: apply 3, then consume it for 2x. Poison + Burn trigger Catalyst.
 		local hp = enemy.hp
 		play(combat, "VolatileMix")
-		expect.equal(hp - enemy.hp, 7, "3 Burn x2 x1.25, rounded down")
+		expect.equal(hp - enemy.hp, 8, "3 Burn x2 x1.25 = 7.5, rounded to nearest")
 		expect.equal(enemy.statuses.Burn, nil, "Burn consumed")
 
 		enemy.statuses.Poison = nil
@@ -192,6 +198,21 @@ return function(t)
 		expect.equal(combat.hero.statuses.Strength, 2, "buffs stay")
 		expect.equal(combat.enemies[1].statuses.Weak, 3, "2 moved, +1 from Malice")
 		expect.equal(combat.hero.block, 6)
+	end)
+
+	t.test("Mirror Curse moves Poison, Bleed and Burn onto the enemy unchanged", function()
+		local combat = newCombat("Hexxer", { "MirrorCurse" })
+		local hero, enemy = combat.hero, combat.enemies[1]
+		hero.statuses.Poison = 5
+		hero.statuses.Bleed = 2
+		hero.statuses.Burn = 3
+		play(combat, "MirrorCurse")
+		expect.equal(hero.statuses.Poison, nil)
+		expect.equal(hero.statuses.Bleed, nil)
+		expect.equal(hero.statuses.Burn, nil)
+		expect.equal(enemy.statuses.Poison, 5, "DoTs are not debuffs: no Malice stack")
+		expect.equal(enemy.statuses.Bleed, 2)
+		expect.equal(enemy.statuses.Burn, 3)
 	end)
 
 	t.test("Spite and Doom scale with the number of different debuffs", function()
