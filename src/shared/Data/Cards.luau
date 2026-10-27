@@ -2,7 +2,7 @@
 	Card definitions. Every card is data: a cost, a type, a rarity, a target rule
 	and an ordered list of effects built from the fixed op set in EffectResolver
 	(Damage, Block, ApplyStatus, Draw, GainEnergy, AddCard, Exhaust, Heal,
-	Repeat, If).
+	Repeat, If, and the class ops Detonate, Siphon and Transfer).
 
 	Fields
 		id, name, cost (number or "X"), type (Attack/Skill/Power/Curse/Wound),
@@ -25,14 +25,14 @@
 
 local Cards = {}
 
--- Warden starter cards -------------------------------------------------------
+-- Shared starter cards (every class starts with 4 of each) --------------------
 
 Cards.Strike = {
 	name = "Strike",
 	cost = 1,
 	type = "Attack",
 	rarity = "Starter",
-	class = "Warden",
+	class = "Neutral",
 	target = "Enemy",
 	text = "Deal 6 damage.",
 	effects = { { op = "Damage", amount = 6 } },
@@ -53,7 +53,7 @@ Cards.Guard = {
 	cost = 1,
 	type = "Skill",
 	rarity = "Starter",
-	class = "Warden",
+	class = "Neutral",
 	target = "Self",
 	text = "Gain 5 Block.",
 	effects = { { op = "Block", amount = 5 } },
@@ -65,6 +65,8 @@ Cards.Guard = {
 		},
 	},
 }
+
+-- Warden starter cards -------------------------------------------------------
 
 Cards.ShieldBash = {
 	name = "Shield Bash",
@@ -406,6 +408,641 @@ Cards.Bastion = {
 	upgrades = {
 		A = { text = "Gain 40 Block. Exhaust.", effects = { { op = "Block", amount = 40 } } },
 		B = { cost = 2, text = "Gain 30 Block. Exhaust." },
+	},
+}
+
+-- Alchemist: DoTs (Poison, Burn, Bleed), Detonate, Sequence QTEs ----------------
+
+Cards.ToxicFlask = {
+	name = "Toxic Flask",
+	cost = 1,
+	type = "Skill",
+	rarity = "Starter",
+	class = "Alchemist",
+	target = "Enemy",
+	text = "Apply 4 Poison.",
+	effects = { { op = "ApplyStatus", status = "Poison", stacks = 4 } },
+	upgrades = {
+		A = { text = "Apply 6 Poison.", effects = { { op = "ApplyStatus", status = "Poison", stacks = 6 } } },
+		B = {
+			text = "Apply 4 Poison. Draw 1 card.",
+			effects = { { op = "ApplyStatus", status = "Poison", stacks = 4 }, { op = "Draw", count = 1 } },
+		},
+	},
+}
+
+-- Detonate: if the enemy has no Burn, light it first.
+local function volatileMix(burn: number, mult: number)
+	return {
+		{
+			op = "If",
+			cond = { kind = "TargetHasStatus", status = "Burn" },
+			["else"] = { { op = "ApplyStatus", status = "Burn", stacks = burn } },
+		},
+		{ op = "Detonate", status = "Burn", mult = mult },
+	}
+end
+
+Cards.VolatileMix = {
+	name = "Volatile Mix",
+	cost = 1,
+	type = "Attack",
+	rarity = "Starter",
+	class = "Alchemist",
+	target = "Enemy",
+	text = "No Burn on the enemy? Apply 3 first. Detonate Burn: deal 2x its stacks.",
+	effects = volatileMix(3, 2),
+	upgrades = {
+		A = {
+			text = "No Burn on the enemy? Apply 3 first. Detonate Burn: deal 3x its stacks.",
+			effects = volatileMix(3, 3),
+		},
+		B = {
+			text = "No Burn on the enemy? Apply 5 first. Detonate Burn: deal 2x its stacks.",
+			effects = volatileMix(5, 2),
+		},
+	},
+}
+
+Cards.Firebomb = {
+	name = "Firebomb",
+	cost = 1,
+	type = "Attack",
+	rarity = "Common",
+	class = "Alchemist",
+	target = "Enemy",
+	text = "Deal 5 damage. Apply 3 Burn.",
+	effects = { { op = "Damage", amount = 5 }, { op = "ApplyStatus", status = "Burn", stacks = 3 } },
+	upgrades = {
+		A = {
+			text = "Deal 7 damage. Apply 4 Burn.",
+			effects = { { op = "Damage", amount = 7 }, { op = "ApplyStatus", status = "Burn", stacks = 4 } },
+		},
+		B = { cost = 2, target = "AllEnemies", text = "Deal 5 damage and apply 3 Burn to all enemies." },
+	},
+}
+
+Cards.Lacerate = {
+	name = "Lacerate",
+	cost = 1,
+	type = "Attack",
+	rarity = "Common",
+	class = "Alchemist",
+	target = "Enemy",
+	text = "Apply 2 Bleed. Deal 3 damage twice.",
+	effects = { { op = "ApplyStatus", status = "Bleed", stacks = 2 }, { op = "Damage", amount = 3, hits = 2 } },
+	upgrades = {
+		A = {
+			text = "Apply 3 Bleed. Deal 3 damage twice.",
+			effects = { { op = "ApplyStatus", status = "Bleed", stacks = 3 }, { op = "Damage", amount = 3, hits = 2 } },
+		},
+		B = {
+			text = "Apply 2 Bleed. Deal 3 damage 3 times.",
+			effects = { { op = "ApplyStatus", status = "Bleed", stacks = 2 }, { op = "Damage", amount = 3, hits = 3 } },
+		},
+	},
+}
+
+Cards.CausticSplash = {
+	name = "Caustic Splash",
+	cost = 0,
+	type = "Attack",
+	rarity = "Common",
+	class = "Alchemist",
+	target = "Enemy",
+	text = "Deal 3 damage. Apply 2 Poison.",
+	effects = { { op = "Damage", amount = 3 }, { op = "ApplyStatus", status = "Poison", stacks = 2 } },
+	upgrades = {
+		A = {
+			text = "Deal 4 damage. Apply 3 Poison.",
+			effects = { { op = "Damage", amount = 4 }, { op = "ApplyStatus", status = "Poison", stacks = 3 } },
+		},
+		B = {
+			text = "Deal 3 damage. Apply 2 Poison. Draw 1 card.",
+			effects = {
+				{ op = "Damage", amount = 3 },
+				{ op = "ApplyStatus", status = "Poison", stacks = 2 },
+				{ op = "Draw", count = 1 },
+			},
+		},
+	},
+}
+
+Cards.NoxiousCloud = {
+	name = "Noxious Cloud",
+	cost = 2,
+	type = "Skill",
+	rarity = "Common",
+	class = "Alchemist",
+	target = "AllEnemies",
+	text = "Apply 4 Poison to all enemies.",
+	effects = { { op = "ApplyStatus", status = "Poison", stacks = 4 } },
+	upgrades = {
+		A = { text = "Apply 6 Poison to all enemies.", effects = { { op = "ApplyStatus", status = "Poison", stacks = 6 } } },
+		B = { cost = 1, text = "Apply 4 Poison to all enemies." },
+	},
+}
+
+Cards.SmokeBomb = {
+	name = "Smoke Bomb",
+	cost = 1,
+	type = "Skill",
+	rarity = "Common",
+	class = "Alchemist",
+	target = "AllEnemies",
+	text = "Gain 7 Block. Apply 1 Weak to all enemies.",
+	effects = { { op = "Block", amount = 7 }, { op = "ApplyStatus", status = "Weak", stacks = 1 } },
+	upgrades = {
+		A = {
+			text = "Gain 10 Block. Apply 1 Weak to all enemies.",
+			effects = { { op = "Block", amount = 10 }, { op = "ApplyStatus", status = "Weak", stacks = 1 } },
+		},
+		B = {
+			text = "Gain 7 Block. Apply 2 Weak to all enemies.",
+			effects = { { op = "Block", amount = 7 }, { op = "ApplyStatus", status = "Weak", stacks = 2 } },
+		},
+	},
+}
+
+Cards.Rupture = {
+	name = "Rupture",
+	cost = 1,
+	type = "Attack",
+	rarity = "Uncommon",
+	class = "Alchemist",
+	target = "Enemy",
+	text = "Detonate Bleed: consume all Bleed on an enemy, deal 3x its stacks.",
+	effects = { { op = "Detonate", status = "Bleed", mult = 3 } },
+	upgrades = {
+		A = {
+			text = "Detonate Bleed: consume all Bleed on an enemy, deal 4x its stacks.",
+			effects = { { op = "Detonate", status = "Bleed", mult = 4 } },
+		},
+		B = {
+			text = "Apply 2 Bleed. Detonate Bleed: consume all Bleed on an enemy, deal 3x its stacks.",
+			effects = {
+				{ op = "ApplyStatus", status = "Bleed", stacks = 2 },
+				{ op = "Detonate", status = "Bleed", mult = 3 },
+			},
+		},
+	},
+}
+
+Cards.Distill = {
+	name = "Distill",
+	cost = 1,
+	type = "Attack",
+	rarity = "Uncommon",
+	class = "Alchemist",
+	target = "Enemy",
+	text = "Detonate Poison: consume all Poison on an enemy, deal 2x its stacks.",
+	effects = { { op = "Detonate", status = "Poison", mult = 2 } },
+	upgrades = {
+		A = {
+			text = "Detonate Poison: consume all Poison on an enemy, deal 3x its stacks.",
+			effects = { { op = "Detonate", status = "Poison", mult = 3 } },
+		},
+		B = { cost = 0, text = "Detonate Poison: consume all Poison on an enemy, deal 2x its stacks." },
+	},
+}
+
+Cards.Accelerant = {
+	name = "Accelerant",
+	cost = 1,
+	type = "Skill",
+	rarity = "Uncommon",
+	class = "Alchemist",
+	target = "Enemy",
+	text = "Apply 2 Poison, 2 Burn and 2 Bleed.",
+	effects = {
+		{ op = "ApplyStatus", status = "Poison", stacks = 2 },
+		{ op = "ApplyStatus", status = "Burn", stacks = 2 },
+		{ op = "ApplyStatus", status = "Bleed", stacks = 2 },
+	},
+	upgrades = {
+		A = {
+			text = "Apply 3 Poison, 3 Burn and 3 Bleed.",
+			effects = {
+				{ op = "ApplyStatus", status = "Poison", stacks = 3 },
+				{ op = "ApplyStatus", status = "Burn", stacks = 3 },
+				{ op = "ApplyStatus", status = "Bleed", stacks = 3 },
+			},
+		},
+		B = { cost = 0, text = "Apply 2 Poison, 2 Burn and 2 Bleed." },
+	},
+}
+
+-- Sequence QTEs: mixing ingredients in the right order.
+Cards.BrewPoison = {
+	name = "Brew Poison",
+	cost = 1,
+	type = "Skill",
+	rarity = "Uncommon",
+	class = "Alchemist",
+	target = "Enemy",
+	text = "Apply 5 Poison. QTE Sequence: Good +2 Poison, Perfect +4 Poison and 2 Burn.",
+	effects = { { op = "ApplyStatus", status = "Poison", stacks = 5 } },
+	qte = {
+		kind = "Sequence",
+		difficulty = 2,
+		good = { { op = "ApplyStatus", status = "Poison", stacks = 2 } },
+		perfect = {
+			{ op = "ApplyStatus", status = "Poison", stacks = 4 },
+			{ op = "ApplyStatus", status = "Burn", stacks = 2 },
+		},
+	},
+}
+
+Cards.Elixir = {
+	name = "Elixir",
+	cost = 1,
+	type = "Skill",
+	rarity = "Uncommon",
+	class = "Alchemist",
+	target = "Self",
+	text = "Gain 7 Block. QTE Sequence: Good +3 Block, Perfect +3 Block and 2 Regen.",
+	effects = { { op = "Block", amount = 7 } },
+	qte = {
+		kind = "Sequence",
+		difficulty = 2,
+		good = { { op = "Block", amount = 3 } },
+		perfect = { { op = "Block", amount = 3 }, { op = "ApplyStatus", status = "Regen", stacks = 2 } },
+	},
+}
+
+Cards.GrandConcoction = {
+	name = "Grand Concoction",
+	cost = 2,
+	type = "Skill",
+	rarity = "Rare",
+	class = "Alchemist",
+	target = "Enemy",
+	text = "Apply 6 Poison and 6 Burn. Exhaust. QTE Sequence: Good +3 Poison, Perfect +3 Poison and 4 Bleed.",
+	keywords = { Exhaust = true },
+	effects = {
+		{ op = "ApplyStatus", status = "Poison", stacks = 6 },
+		{ op = "ApplyStatus", status = "Burn", stacks = 6 },
+	},
+	qte = {
+		kind = "Sequence",
+		difficulty = 3,
+		good = { { op = "ApplyStatus", status = "Poison", stacks = 3 } },
+		perfect = {
+			{ op = "ApplyStatus", status = "Poison", stacks = 3 },
+			{ op = "ApplyStatus", status = "Bleed", stacks = 4 },
+		},
+	},
+}
+
+Cards.ChainReaction = {
+	name = "Chain Reaction",
+	cost = 2,
+	type = "Attack",
+	rarity = "Rare",
+	class = "Alchemist",
+	target = "AllEnemies",
+	text = "Detonate Burn, then Poison, on all enemies: deal 2x their stacks. Exhaust.",
+	keywords = { Exhaust = true },
+	effects = {
+		{ op = "Detonate", status = "Burn", mult = 2 },
+		{ op = "Detonate", status = "Poison", mult = 2 },
+	},
+	upgrades = {
+		A = { keywords = {}, text = "Detonate Burn, then Poison, on all enemies: deal 2x their stacks." },
+		B = {
+			text = "Detonate Burn, then Poison, on all enemies: deal 3x their stacks. Exhaust.",
+			effects = {
+				{ op = "Detonate", status = "Burn", mult = 3 },
+				{ op = "Detonate", status = "Poison", mult = 3 },
+			},
+		},
+	},
+}
+
+Cards.ToxicFumes = {
+	name = "Toxic Fumes",
+	cost = 2,
+	type = "Power",
+	rarity = "Rare",
+	class = "Alchemist",
+	target = "Self",
+	text = "At the start of your turn, apply 2 Poison to all enemies.",
+	effects = { { op = "ApplyStatus", status = "Miasma", stacks = 2 } },
+	upgrades = {
+		A = { text = "At the start of your turn, apply 3 Poison to all enemies.", effects = { { op = "ApplyStatus", status = "Miasma", stacks = 3 } } },
+		B = { cost = 1, text = "At the start of your turn, apply 2 Poison to all enemies." },
+	},
+}
+
+-- Hexxer: debuffs, Siphon and Transfer, Trace QTEs --------------------------------
+
+Cards.EvilEye = {
+	name = "Evil Eye",
+	cost = 1,
+	type = "Skill",
+	rarity = "Starter",
+	class = "Hexxer",
+	target = "Enemy",
+	text = "Apply 2 Weak and 2 Vulnerable.",
+	effects = {
+		{ op = "ApplyStatus", status = "Weak", stacks = 2 },
+		{ op = "ApplyStatus", status = "Vulnerable", stacks = 2 },
+	},
+	upgrades = {
+		A = {
+			text = "Apply 3 Weak and 3 Vulnerable.",
+			effects = {
+				{ op = "ApplyStatus", status = "Weak", stacks = 3 },
+				{ op = "ApplyStatus", status = "Vulnerable", stacks = 3 },
+			},
+		},
+		B = {
+			text = "Apply 2 Weak and 2 Vulnerable. Draw 1 card.",
+			effects = {
+				{ op = "ApplyStatus", status = "Weak", stacks = 2 },
+				{ op = "ApplyStatus", status = "Vulnerable", stacks = 2 },
+				{ op = "Draw", count = 1 },
+			},
+		},
+	},
+}
+
+-- Siphon: steal buffs; an enemy with none is cursed instead.
+local function siphon(count: number, extra: { any }?): { any }
+	local effects: { any } = {
+		{
+			op = "If",
+			cond = { kind = "TargetHasKind", statusKind = "Buff" },
+			["then"] = { { op = "Siphon", count = count } },
+			["else"] = { { op = "ApplyStatus", status = "Weak", stacks = 1 } },
+		},
+	}
+	for _, effect in extra or {} :: { any } do
+		table.insert(effects, effect)
+	end
+	return effects
+end
+
+Cards.Siphon = {
+	name = "Siphon",
+	cost = 1,
+	type = "Skill",
+	rarity = "Starter",
+	class = "Hexxer",
+	target = "Enemy",
+	text = "Siphon: steal 1 random buff from an enemy. If it has none, apply 1 Weak.",
+	effects = siphon(1),
+	upgrades = {
+		A = {
+			text = "Siphon: steal 1 random buff from an enemy. If it has none, apply 1 Weak. Gain 5 Block.",
+			effects = siphon(1, { { op = "Block", amount = 5 } }),
+		},
+		B = {
+			text = "Siphon: steal 2 random buffs from an enemy. If it has none, apply 1 Weak.",
+			effects = siphon(2),
+		},
+	},
+}
+
+Cards.Wither = {
+	name = "Wither",
+	cost = 1,
+	type = "Attack",
+	rarity = "Common",
+	class = "Hexxer",
+	target = "Enemy",
+	text = "Deal 7 damage. Apply 1 Frail.",
+	effects = { { op = "Damage", amount = 7 }, { op = "ApplyStatus", status = "Frail", stacks = 1 } },
+	upgrades = {
+		A = {
+			text = "Deal 10 damage. Apply 1 Frail.",
+			effects = { { op = "Damage", amount = 10 }, { op = "ApplyStatus", status = "Frail", stacks = 1 } },
+		},
+		B = {
+			text = "Deal 7 damage. Apply 2 Frail.",
+			effects = { { op = "Damage", amount = 7 }, { op = "ApplyStatus", status = "Frail", stacks = 2 } },
+		},
+	},
+}
+
+Cards.Spite = {
+	name = "Spite",
+	cost = 1,
+	type = "Attack",
+	rarity = "Common",
+	class = "Hexxer",
+	target = "Enemy",
+	text = "Deal 4 damage, +3 for each different debuff on the enemy.",
+	effects = { { op = "Damage", amount = 4, perDebuff = 3 } },
+	upgrades = {
+		A = {
+			text = "Deal 4 damage, +4 for each different debuff on the enemy.",
+			effects = { { op = "Damage", amount = 4, perDebuff = 4 } },
+		},
+		B = {
+			text = "Deal 7 damage, +3 for each different debuff on the enemy.",
+			effects = { { op = "Damage", amount = 7, perDebuff = 3 } },
+		},
+	},
+}
+
+Cards.Befuddle = {
+	name = "Befuddle",
+	cost = 0,
+	type = "Skill",
+	rarity = "Common",
+	class = "Hexxer",
+	target = "Enemy",
+	text = "Apply 1 Dazed (your QTEs against it are wider). Draw 1 card.",
+	effects = { { op = "ApplyStatus", status = "Dazed", stacks = 1 }, { op = "Draw", count = 1 } },
+	upgrades = {
+		A = {
+			text = "Apply 2 Dazed (your QTEs against it are wider). Draw 1 card.",
+			effects = { { op = "ApplyStatus", status = "Dazed", stacks = 2 }, { op = "Draw", count = 1 } },
+		},
+		B = {
+			text = "Apply 1 Dazed and 1 Frail. Draw 1 card.",
+			effects = {
+				{ op = "ApplyStatus", status = "Dazed", stacks = 1 },
+				{ op = "ApplyStatus", status = "Frail", stacks = 1 },
+				{ op = "Draw", count = 1 },
+			},
+		},
+	},
+}
+
+Cards.HexWard = {
+	name = "Hex Ward",
+	cost = 1,
+	type = "Skill",
+	rarity = "Common",
+	class = "Hexxer",
+	target = "Self",
+	text = "Gain 6 Block. Apply 1 Weak to all enemies.",
+	effects = { { op = "Block", amount = 6 }, { op = "ApplyStatus", status = "Weak", stacks = 1, target = "AllEnemies" } },
+	upgrades = {
+		A = {
+			text = "Gain 9 Block. Apply 1 Weak to all enemies.",
+			effects = { { op = "Block", amount = 9 }, { op = "ApplyStatus", status = "Weak", stacks = 1, target = "AllEnemies" } },
+		},
+		B = {
+			text = "Gain 6 Block. Apply 1 Weak and 1 Frail to all enemies.",
+			effects = {
+				{ op = "Block", amount = 6 },
+				{ op = "ApplyStatus", status = "Weak", stacks = 1, target = "AllEnemies" },
+				{ op = "ApplyStatus", status = "Frail", stacks = 1, target = "AllEnemies" },
+			},
+		},
+	},
+}
+
+Cards.DarkPact = {
+	name = "Dark Pact",
+	cost = 0,
+	type = "Skill",
+	rarity = "Common",
+	class = "Hexxer",
+	target = "Self",
+	text = "Gain 2 Strength. Gain 2 Weak.",
+	effects = {
+		{ op = "ApplyStatus", status = "Strength", stacks = 2 },
+		{ op = "ApplyStatus", status = "Weak", stacks = 2 },
+	},
+	upgrades = {
+		A = {
+			text = "Gain 3 Strength. Gain 2 Weak.",
+			effects = {
+				{ op = "ApplyStatus", status = "Strength", stacks = 3 },
+				{ op = "ApplyStatus", status = "Weak", stacks = 2 },
+			},
+		},
+		B = {
+			text = "Gain 2 Strength. Gain 1 Weak.",
+			effects = {
+				{ op = "ApplyStatus", status = "Strength", stacks = 2 },
+				{ op = "ApplyStatus", status = "Weak", stacks = 1 },
+			},
+		},
+	},
+}
+
+Cards.MirrorCurse = {
+	name = "Mirror Curse",
+	cost = 1,
+	type = "Skill",
+	rarity = "Uncommon",
+	class = "Hexxer",
+	target = "Enemy",
+	text = "Transfer: move all your debuffs, Poison, Bleed and Burn onto an enemy. Gain 6 Block.",
+	effects = { { op = "Transfer" }, { op = "Block", amount = 6 } },
+	upgrades = {
+		A = {
+			text = "Transfer: move all your debuffs, Poison, Bleed and Burn onto an enemy. Gain 9 Block.",
+			effects = { { op = "Transfer" }, { op = "Block", amount = 9 } },
+		},
+		B = { cost = 0, text = "Transfer: move all your debuffs, Poison, Bleed and Burn onto an enemy. Gain 6 Block." },
+	},
+}
+
+Cards.Malediction = {
+	name = "Malediction",
+	cost = 2,
+	type = "Attack",
+	rarity = "Uncommon",
+	class = "Hexxer",
+	target = "Enemy",
+	text = "Deal 8 damage. Apply 1 Weak, 1 Vulnerable and 1 Frail.",
+	effects = {
+		{ op = "Damage", amount = 8 },
+		{ op = "ApplyStatus", status = "Weak", stacks = 1 },
+		{ op = "ApplyStatus", status = "Vulnerable", stacks = 1 },
+		{ op = "ApplyStatus", status = "Frail", stacks = 1 },
+	},
+	upgrades = {
+		A = {
+			text = "Deal 12 damage. Apply 1 Weak, 1 Vulnerable and 1 Frail.",
+			effects = {
+				{ op = "Damage", amount = 12 },
+				{ op = "ApplyStatus", status = "Weak", stacks = 1 },
+				{ op = "ApplyStatus", status = "Vulnerable", stacks = 1 },
+				{ op = "ApplyStatus", status = "Frail", stacks = 1 },
+			},
+		},
+		B = { cost = 1, text = "Deal 8 damage. Apply 1 Weak, 1 Vulnerable and 1 Frail." },
+	},
+}
+
+-- Trace QTEs: drawing sigils.
+Cards.SigilOfRuin = {
+	name = "Sigil of Ruin",
+	cost = 1,
+	type = "Skill",
+	rarity = "Uncommon",
+	class = "Hexxer",
+	target = "Enemy",
+	text = "Apply 2 Vulnerable. QTE Trace: Good +2 Weak, Perfect +2 Weak, 2 Frail and 1 Dazed.",
+	effects = { { op = "ApplyStatus", status = "Vulnerable", stacks = 2 } },
+	qte = {
+		kind = "Trace",
+		difficulty = 2,
+		good = { { op = "ApplyStatus", status = "Weak", stacks = 2 } },
+		perfect = {
+			{ op = "ApplyStatus", status = "Weak", stacks = 2 },
+			{ op = "ApplyStatus", status = "Frail", stacks = 2 },
+			{ op = "ApplyStatus", status = "Dazed", stacks = 1 },
+		},
+	},
+}
+
+Cards.SoulDrain = {
+	name = "Soul Drain",
+	cost = 1,
+	type = "Attack",
+	rarity = "Uncommon",
+	class = "Hexxer",
+	target = "Enemy",
+	text = "Deal 7 damage. QTE Trace: Good +3, Perfect +5 and steal 1 buff.",
+	effects = { { op = "Damage", amount = 7 } },
+	qte = {
+		kind = "Trace",
+		difficulty = 2,
+		good = { { op = "Damage", amount = 3 } },
+		perfect = { { op = "Damage", amount = 5 }, { op = "Siphon", count = 1 } },
+	},
+}
+
+Cards.Doom = {
+	name = "Doom",
+	cost = 2,
+	type = "Attack",
+	rarity = "Rare",
+	class = "Hexxer",
+	target = "Enemy",
+	text = "Deal 8 damage, +5 for each different debuff on the enemy. QTE Trace: Good +5, Perfect +10 and Stun.",
+	effects = { { op = "Damage", amount = 8, perDebuff = 5 } },
+	qte = {
+		kind = "Trace",
+		difficulty = 3,
+		good = { { op = "Damage", amount = 5 } },
+		perfect = { { op = "Damage", amount = 10 }, { op = "ApplyStatus", status = "Stun", stacks = 1 } },
+	},
+}
+
+Cards.HexAura = {
+	name = "Hex Aura",
+	cost = 2,
+	type = "Power",
+	rarity = "Rare",
+	class = "Hexxer",
+	target = "Self",
+	text = "At the start of your turn, apply 1 Vulnerable to all enemies.",
+	effects = { { op = "ApplyStatus", status = "Gloom", stacks = 1 } },
+	upgrades = {
+		A = { cost = 1, text = "At the start of your turn, apply 1 Vulnerable to all enemies." },
+		B = {
+			keywords = { Innate = true },
+			text = "Innate. At the start of your turn, apply 1 Vulnerable to all enemies.",
+		},
 	},
 }
 

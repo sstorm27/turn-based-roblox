@@ -215,6 +215,33 @@ function Combat:livingEnemies()
 	return list
 end
 
+function Combat:opponentsOf(unit)
+	if unit.side == "Hero" then
+		return self:livingEnemies()
+	end
+	return self.hero.alive and { self.hero } or {}
+end
+
+-- How many different statuses of one kind (Buff, Debuff, DoT) a unit has.
+function Combat:countStatusKinds(unit, kind: string): number
+	local count = 0
+	for id in unit.statuses do
+		if self.content.Statuses[id].kind == kind then
+			count += 1
+		end
+	end
+	return count
+end
+
+-- A class passive's damage multiplier on an enemy: `amp` is
+-- { kind, minKinds, mult } from the hero def (Catalyst, Malice).
+function Combat:_passiveMult(unit, amp): number
+	if amp and unit.side == "Enemy" and self:countStatusKinds(unit, amp.kind) >= amp.minKinds then
+		return amp.mult
+	end
+	return 1
+end
+
 function Combat:getUnit(id: string)
 	if id == "hero" then
 		return self.hero
@@ -271,6 +298,7 @@ function Combat:computeAttackDamage(source, target, base: number): number
 	end
 	if target then
 		value = StatusSystem.modify(self, target, "ModifyDamageTaken", value)
+		value *= self:_passiveMult(target, self.heroDef.debuffAmp)
 	end
 	return math.max(0, math.floor(value + 1e-9))
 end
@@ -286,6 +314,8 @@ function Combat:attack(source, target, base: number, ctx, hit: number, hits: num
 		if hits > 1 then
 			windowMult *= qte.MultiHitWindowMult
 		end
+		-- Dazed on the attacker makes its hits easier to read.
+		windowMult *= StatusSystem.modify(self, source, "ModifyAttackerQteWindow", 1)
 		local grade = self:_requestQte({
 			source = "Defense",
 			kind = defense.kind,
@@ -303,7 +333,7 @@ function Combat:attack(source, target, base: number, ctx, hit: number, hits: num
 		local mult
 		if grade == "Perfect" then
 			mult = defense.perfect or qte.DefenseDefaults.perfect
-			self:_onPerfectDefense()
+			self:_onPerfectDefense(source)
 		elseif grade == "Good" then
 			mult = defense.good or qte.DefenseDefaults.good
 		else
@@ -318,10 +348,11 @@ function Combat:attack(source, target, base: number, ctx, hit: number, hits: num
 	self:applyDamage(target, amount, { source = source, isAttack = true })
 end
 
-function Combat:_onPerfectDefense()
+-- `attacker` is the enemy whose hit was defended: class hooks can target it.
+function Combat:_onPerfectDefense(attacker)
 	local effects = self.heroDef.onPerfectDefense
 	if effects then
-		EffectResolver.run(self, effects, { source = self.hero, defaultTarget = "Self" })
+		EffectResolver.run(self, effects, { source = self.hero, target = attacker, defaultTarget = "Self" })
 	end
 end
 
@@ -356,6 +387,76 @@ function Combat:loseHp(target, amount: number)
 	target.hp -= amount
 	self:emit("LoseHp", { targetId = target.id, amount = amount })
 	self:_checkDeath(target)
+end
+
+-- DoT damage after the Alchemist's Catalyst, rounded to the nearest whole
+-- number (Poison 2 with Catalyst deals 3, not 2).
+function Combat:_catalyst(target, amount: number): number
+	return math.floor(amount * self:_passiveMult(target, self.heroDef.dotAmp) + 0.5)
+end
+
+-- Damage from a DoT status (Poison and Bleed ignore Block, Burn hits it),
+-- raised by the Alchemist's Catalyst.
+function Combat:dotDamage(target, amount: number, ignoreBlock: boolean)
+	amount = self:_catalyst(target, amount)
+	if ignoreBlock then
+		self:loseHp(target, amount)
+	else
+		self:applyDamage(target, amount, { isAttack = false })
+	end
+end
+
+-- Consumes every stack of a status on `target` for `mult` damage per stack
+-- (Detonate cards). Hits Block; Catalyst counts the status being consumed.
+function Combat:detonate(source, target, statusId: string, mult: number)
+	local stacks = target.statuses[statusId] or 0
+	if not target.alive or stacks <= 0 then
+		return
+	end
+	local amount = self:_catalyst(target, stacks * mult)
+	self:removeStatus(target, statusId)
+	self:emit("Detonated", { targetId = target.id, sourceId = source.id, status = statusId, stacks = stacks })
+	self:applyDamage(target, amount, { source = source, isAttack = false })
+end
+
+-- Takes `count` random buffs off `target` and gives them, with all their
+-- stacks, to `source` (Siphon cards).
+function Combat:siphon(source, target, count: number)
+	for _ = 1, count do
+		if not target.alive or not source.alive then
+			return
+		end
+		local buffs = {}
+		for _, id in StatusSystem.sortedIds(self.content, target) do
+			if self.content.Statuses[id].kind == "Buff" then
+				table.insert(buffs, id)
+			end
+		end
+		if #buffs == 0 then
+			return
+		end
+		local id = buffs[self.rng.combat:int(1, #buffs)]
+		local stacks = target.statuses[id]
+		self:removeStatus(target, id)
+		self:emit("Siphoned", { targetId = target.id, sourceId = source.id, status = id, stacks = stacks })
+		self:applyStatus(source, id, stacks, source)
+	end
+end
+
+-- Moves every debuff and DoT on `source` onto `target` (Transfer cards).
+function Combat:transferDebuffs(source, target)
+	if not target.alive then
+		return
+	end
+	for _, id in StatusSystem.sortedIds(self.content, source) do
+		local kind = self.content.Statuses[id].kind
+		if kind == "Debuff" or kind == "DoT" then
+			local stacks = source.statuses[id]
+			self:removeStatus(source, id)
+			self:emit("Transferred", { targetId = target.id, sourceId = source.id, status = id, stacks = stacks })
+			self:applyStatus(target, id, stacks, source)
+		end
+	end
 end
 
 function Combat:_checkDeath(unit)
@@ -414,7 +515,14 @@ function Combat:applyStatus(unit, id: string, stacks: number, source)
 	if not unit.alive or stacks == 0 then
 		return
 	end
-	assert(self.content.Statuses[id], `unknown status {id}`)
+	local def = self.content.Statuses[id]
+	assert(def, `unknown status {id}`)
+	-- Malice: the hero's debuffs on enemies last extra rounds.
+	local extend = self.heroDef.debuffExtend
+	if extend and stacks > 0 and def.kind == "Debuff" and def.decay == "Round"
+		and source and source.side == "Hero" and unit.side == "Enemy" then
+		stacks += extend
+	end
 	self:addStatus(unit, id, stacks)
 	if unit.side == "Hero" and self:_actingSide() == "Enemy" then
 		unit.freshStatuses[id] = true
@@ -426,7 +534,7 @@ function Combat:applyStatus(unit, id: string, stacks: number, source)
 		stacks = stacks,
 		total = unit.statuses[id] or 0,
 	})
-	local hook = self.content.Statuses[id].OnApplied
+	local hook = def.OnApplied
 	if hook and unit.statuses[id] then
 		hook({ combat = self, owner = unit, stacks = unit.statuses[id], statusId = id, added = stacks })
 	end

@@ -11,20 +11,16 @@
 		defenseQte     the enemy move's defenseQte, if it has one
 		moveId         the enemy move being performed
 
+	Class ops: Detonate (consume a DoT for damage), Siphon (steal buffs) and
+	Transfer (move your debuffs, Poison, Bleed and Burn onto the target).
+
 	Targets are relative to the source: "Self", "Target", "Hero",
 	"AllEnemies" (the source's opponents), "RandomEnemy", "AllAllies".
 ]]
 
 local EffectResolver = {}
 
-local DEFAULTS_TO_TARGET = { Damage = true, ApplyStatus = true }
-
-local function opponentsOf(combat, unit)
-	if unit.side == "Hero" then
-		return combat:livingEnemies()
-	end
-	return combat.hero.alive and { combat.hero } or {}
-end
+local DEFAULTS_TO_TARGET = { Damage = true, ApplyStatus = true, Detonate = true, Siphon = true, Transfer = true }
 
 local function alliesOf(combat, unit)
 	if unit.side == "Hero" then
@@ -48,9 +44,9 @@ function EffectResolver.resolveTargets(combat, effect, ctx): { any }
 		end
 		return (ctx.target and ctx.target.alive) and { ctx.target } or {}
 	elseif rule == "AllEnemies" then
-		return opponentsOf(combat, source)
+		return combat:opponentsOf(source)
 	elseif rule == "RandomEnemy" then
-		local pool = opponentsOf(combat, source)
+		local pool = combat:opponentsOf(source)
 		if #pool == 0 then
 			return {}
 		end
@@ -72,6 +68,9 @@ local function conditionMet(combat, cond, ctx): boolean
 	if cond.kind == "TargetHasStatus" then
 		local target = ctx.target
 		return target ~= nil and (target.statuses[cond.status] or 0) >= (cond.stacks or 1)
+	elseif cond.kind == "TargetHasKind" then
+		local target = ctx.target
+		return target ~= nil and combat:countStatusKinds(target, cond.statusKind) >= (cond.count or 1)
 	elseif cond.kind == "SelfHasStatus" then
 		return (ctx.source.statuses[cond.status] or 0) >= (cond.stacks or 1)
 	elseif cond.kind == "SelfHpBelow" then
@@ -96,6 +95,9 @@ function ops.Damage(combat, effect, ctx)
 			if effect.amountFrom == "Block" then
 				base += ctx.source.block
 			end
+			if effect.perDebuff then
+				base += effect.perDebuff * combat:countStatusKinds(target, "Debuff")
+			end
 			combat:attack(ctx.source, target, base, ctx, hit, hits)
 		end
 	end
@@ -110,6 +112,28 @@ end
 function ops.ApplyStatus(combat, effect, ctx)
 	for _, unit in EffectResolver.resolveTargets(combat, effect, ctx) do
 		combat:applyStatus(unit, effect.status, countOf(effect.stacks, ctx), ctx.source)
+	end
+end
+
+-- Consumes a DoT's stacks for `mult` damage per stack.
+function ops.Detonate(combat, effect, ctx)
+	for _, unit in EffectResolver.resolveTargets(combat, effect, ctx) do
+		combat:detonate(ctx.source, unit, effect.status, effect.mult or 1)
+	end
+end
+
+-- Steals `count` random buffs from the target.
+function ops.Siphon(combat, effect, ctx)
+	for _, unit in EffectResolver.resolveTargets(combat, effect, ctx) do
+		combat:siphon(ctx.source, unit, countOf(effect.count, ctx))
+	end
+end
+
+-- Moves all of the source's debuffs and DoTs onto the target.
+function ops.Transfer(combat, effect, ctx)
+	for _, unit in EffectResolver.resolveTargets(combat, effect, ctx) do
+		combat:transferDebuffs(ctx.source, unit)
+		break -- debuffs move once, onto the first target
 	end
 end
 

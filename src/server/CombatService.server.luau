@@ -147,11 +147,14 @@ end
 
 -- A new run replaces whatever the player had going. No hub, no lives: when
 -- the run ends the player starts a new one.
-local function startRun(player: Player)
+local function startRun(player: Player, heroId: any)
+	if type(heroId) ~= "string" or not Content.Heroes[heroId] then
+		heroId = "Warden"
+	end
 	endSession(player)
 	local assist = assists[player] or { wideWindows = false, alwaysGood = false }
 	local seed = newSeed(player)
-	local run = Run.new(Content, { seed = seed, wideQteWindows = assist.wideWindows })
+	local run = Run.new(Content, { seed = seed, hero = heroId, wideQteWindows = assist.wideWindows })
 	local session: Session = {
 		run = run,
 		combat = nil,
@@ -167,8 +170,8 @@ Remotes.StartCombat.OnServerEvent:Connect(function(player, encounterId)
 	startCombat(player, encounterId)
 end)
 
-Remotes.StartRun.OnServerEvent:Connect(function(player)
-	startRun(player)
+Remotes.StartRun.OnServerEvent:Connect(function(player, heroId)
+	startRun(player, heroId)
 end)
 
 Remotes.ChooseNode.OnServerEvent:Connect(function(player, nodeId)
